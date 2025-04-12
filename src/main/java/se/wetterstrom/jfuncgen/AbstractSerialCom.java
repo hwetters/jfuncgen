@@ -38,16 +38,17 @@ import se.wetterstrom.jfuncgen.AdvancedPanel.SweepSource;
  */
 public abstract class AbstractSerialCom {
 
+	/** port settings */
 	private final PortSettings portSettings;
-
 	/** the listener */
 	protected SerialListener serialListener = new SerialListener();
+	/** output consumers */
 	private final Set<Consumer<String>> outputConsumers = new HashSet<>();
-
+	/** port */
 	private Optional<SerialPort> port = Optional.empty();
-
 	/** the consumer */
 	protected BiConsumer<StatusBar.Status, String> statusConsumer = (a, b) -> System.out.println(a + ":" + b);
+	/** device type */
 	private DeviceType deviceType;
 
 	/**
@@ -60,6 +61,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Get ports
 	 * @return ports
 	 */
 	protected static SerialPort[] getPorts() {
@@ -67,6 +69,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Set serial listener
 	 * @param serialListener the listener
 	 */
 	protected void setSerialListener(SerialListener serialListener) {
@@ -74,6 +77,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Set port
 	 * @param port the port
 	 */
 	public void setPort(SerialPort port) {
@@ -86,6 +90,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Write string to serial
 	 * @param str the string to be written
 	 * @return true if successful
 	 */
@@ -108,6 +113,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Write bytes to serial
 	 * @param data the bytes to be written
 	 * @return true if successful
 	 */
@@ -115,6 +121,8 @@ public abstract class AbstractSerialCom {
 		return port.filter(SerialPort::isOpen).map(p -> {
 			outputConsumers.forEach(c -> c.accept(Utils.hexDump(data)));
 			int count = p.writeBytes(data, data.length, 0);
+			System.out.println(">>Write bytes.length "+data.length);
+			System.out.println(">>Write bytes.length "+data.length+" count="+count);
 			if (count == -1) {
 				statusConsumer.accept(StatusBar.Status.ERROR, "Write error");
 				return false;
@@ -129,6 +137,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Send request for string
 	 * @param req the request
 	 * @return the reply string
 	 */
@@ -141,6 +150,15 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Poll
+	 * @return the reply string
+	 */
+	public String poll() {
+		return serialListener.poll(10);
+	}
+
+	/**
+	 * Send request for integer
 	 * @param req          the request
 	 * @param defaultValue the default value
 	 * @return the value as integer
@@ -155,6 +173,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Send request for double
 	 * @param req          the request
 	 * @param defaultValue the default value
 	 * @return the value as double
@@ -169,6 +188,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Send request for bytes
 	 * @param req the request
 	 * @return the response
 	 */
@@ -181,6 +201,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Format data to serial
 	 * @param fmt  the format string
 	 * @param args the arguments
 	 */
@@ -189,6 +210,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Add output listener
 	 * @param consumer the consumer
 	 */
 	public void addOutputConsumer(Consumer<String> consumer) {
@@ -196,6 +218,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Add consumer
 	 * @param consumer the consumer
 	 */
 	public void addConsumer(Consumer<String> consumer) {
@@ -225,6 +248,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Get device type
 	 * @return the device type
 	 */
 	protected DeviceType getDeviceType() {
@@ -232,6 +256,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Set device type
 	 * @param deviceType the device type
 	 */
 	protected void setDeviceType(DeviceType deviceType) {
@@ -252,6 +277,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Get default port name
 	 * @return the default port name
 	 */
 	public String getDefaultPortName() {
@@ -259,6 +285,7 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Set status consumer
 	 * @param consumer the status consumer
 	 */
 	public void setStatusConsumer(BiConsumer<StatusBar.Status, String> consumer) {
@@ -266,37 +293,60 @@ public abstract class AbstractSerialCom {
 	}
 
 	/**
+	 * Get status consumer
+	 * @return status consumer
+	 */
+	public BiConsumer<StatusBar.Status, String> getStatusConsumer() {
+		return statusConsumer;
+	}
+
+	/**
+	 * Check of online
 	 * @return true if online
 	 */
 	public boolean isOnline() {
 		return port.map(SerialPort::isOpen).orElse(false);
 	}
 
-	/** @return number of samples in one wave form */
+	/** 
+	 * Get number of samples in one wave form
+	 * @return number of samples in one wave form */
 	public abstract int getArbSize();
 
-	/** @return the lowest valid value of one sample */
+	/**
+	 * Get the lowest valid value of one sample 
+	 * @return the lowest valid value of one sample */
 	public abstract int getArbMin();
 
-	/** @return the highest valid value of one sample */
+	/** 
+	 * Get the highest valid value of one sample 
+	 * @return the highest valid value of one sample */
 	public abstract int getArbMax();
 
-	/** @return (arbMax - arbMin) / 2 */
+	/** 
+	 * Get offset
+	 * @return (arbMax - arbMin) / 2 */
 	public abstract int getArbOffset();
 
-	/** @return max frequency */
+	/** 
+	 * Get max frequency
+	 * @return max frequency */
 	public abstract double getMaxFrequency();
 
 	/**
+	 * Get list of wave types
 	 * @param channel the channel
 	 * @return the wave types
 	 */
 	public abstract List<WaveType> getWaveTypes(int channel);
 
-	/** @return gate values */
+	/** 
+	 * Get list of gate values
+	 * @return gate values */
 	public abstract List<IdName> getGateValues();
 
 	/**
+	 * Get arbitrary data
 	 * @param num the arb number
 	 * @param pm  the progress monitor
 	 * @return the arb data
@@ -304,6 +354,7 @@ public abstract class AbstractSerialCom {
 	public abstract int[] getArbData(int num, ProgressMonitor pm);
 
 	/**
+	 * Set arbitrary data
 	 * @param num  the arb num
 	 * @param data the data
 	 * @param pm   the progress monitor
@@ -311,206 +362,284 @@ public abstract class AbstractSerialCom {
 	public abstract void setArbData(int num, int[] data, ProgressMonitor pm);
 
 	/**
+	 * Invert channel
 	 * @param channel the channel
 	 * @return true if inverted
 	 */
 	public abstract boolean getInvert(int channel);
 
 	/**
+	 * Enable channel
 	 * @param channel the channel
 	 * @param enabled enabled
 	 */
 	public abstract void setEnableChannel(int channel, boolean enabled);
 
 	/**
+	 * Enable output
 	 * @param enable enable
 	 */
 	public abstract void setEnableOutput(boolean enable);
 
 	/**
+	 * Enable power output
 	 * @param enable enable
 	 */
 	public abstract void setPowerOut(boolean enable);
 
 	/**
+	 * Check if enabled
 	 * @param channel the channel
 	 * @return enabled
 	 */
 	public abstract boolean getEnableChannel(int channel);
 
 	/**
+	 * Set frequency
 	 * @param channel   the channel
 	 * @param frequency the frequency
 	 */
 	public abstract void setFrequency(int channel, double frequency);
 
 	/**
+	 * Get frequency
 	 * @param channel the channel
 	 * @return the frequency
 	 */
 	public abstract double getFrequency(int channel);
 
 	/**
+	 * Set waveform
 	 * @param channel  the channel
 	 * @param waveform the waveform
 	 */
 	public abstract void setWaveForm(int channel, WaveType waveform);
 
 	/**
+	 * Get wave form
 	 * @param channel the channel
 	 * @return the waveform
 	 */
 	public abstract int getWaveForm(int channel);
 
-	/** @return measure mode */
+	/**
+	 * Get measure mode
+	 * @return measure mode */
 	public abstract MeasureMode getMeasureMode();
 
-	/** @return model */
+	/**
+	 * Get model
+	 * @return model */
 	public abstract String getModel();
 
-	/** @return product */
+	/**
+	 * Get product
+	 * @return product */
 	public abstract String getProduct();
 
-	/** @return firmware */
+	/**
+	 * Get firmware
+	 *  @return firmware */
 	public abstract String getFirmware();
 
 	/**
+	 * Get duty cycle
 	 * @param channel the channel
 	 * @return duty cycle
 	 */
 	public abstract double getDutyCycle(int channel);
 
 	/**
+	 * Set duty cycle
 	 * @param channel the channel
 	 * @param duty    the duty cycle
 	 */
 	public abstract void setDutyCycle(int channel, double duty);
 
 	/**
+	 * Get offset
 	 * @param channel the channel
 	 * @return the offset
 	 */
 	public abstract int getOffset(int channel);
 
 	/**
+	 * Set offset
 	 * @param channel the channel
 	 * @param offset  the offset
 	 */
 	public abstract void setOffset(int channel, int offset);
 
 	/**
+	 * Get phase
 	 * @param channel the channel
 	 * @return the phase
 	 */
 	public abstract int getPhase(int channel);
 
 	/**
+	 * Set phase
 	 * @param channel the channel
 	 * @param phase   the phase
 	 */
 	public abstract void setPhase(int channel, int phase);
 
 	/**
+	 * Get attenuation
 	 * @param channel the channel
 	 * @return the attenuation
 	 */
 	public abstract int getAttenuation(int channel);
 
 	/**
+	 * Set attenuation
 	 * @param channel the channel
 	 * @param atten   the attenuation
 	 */
 	public abstract void setAttenuation(int channel, int atten);
 
 	/**
+	 * Get amplitude
 	 * @param channel the channel
 	 * @return the amplitude
 	 */
 	public abstract double getAmplitude(int channel);
 
 	/**
+	 * Set amplitude
 	 * @param channel   the channel
 	 * @param amplitude the amplitude
 	 */
 	public abstract void setAmplitude(int channel, double amplitude);
 
-	/** @return trace mode */
+	/**
+	 * Get trace mode
+	 *  @return trace mode */
 	public abstract int getTrace();
 
-	/** @return true if power output enabled */
+	/**
+	 * Get power output
+	 *  @return true if power output enabled */
 	public abstract boolean getPowerOut();
 
-	/** @return true if output enabled */
+	/**
+	 * Get enable output
+	 * @return true if output enabled */
 	public abstract boolean getEnableOutput();
 
-	/** @param enable the enable to set */
+	/**
+	 * Enable/disable trace
+	 * @param enable the enable to set */
 	public abstract void setTrace(boolean enable);
 
-	/** @return Ext/TTL */
+	/**
+	 * Get EXT or TTL
+	 * @return Ext/TTL */
 	public abstract int getExtTtl();
 
-	/** @param useTtl if using TTL */
+	/**
+	 * Set EXT or TTL
+	 * @param useTtl if using TTL */
 	public abstract void setExtTtl(boolean useTtl);
 
-	/** @return count */
+	/** 
+	 * Get count
+	 * @return count */
 	public abstract int getCount();
 
-	/** @return gate value */
+	/** 
+	 * Get gate value
+	 * @return gate value */
 	public abstract int getGateValue();
 
-	/** @param value the gate value */
+	/** 
+	 * Set gate value
+	 * @param value the gate value */
 	public abstract void setGateValue(int value);
 
-	/** @param frequency the sweep start */
+	/**
+	 * Set sweep start
+	 * @param frequency the sweep start */
 	public abstract void setSweepStart(double frequency);
 
-	/** @param frequency the sweep end */
+	/**
+	 * Set sweep end
+	 * @param frequency the sweep end */
 	public abstract void setSweepEnd(double frequency);
 
-	/** @param seconds the sweep time */
+	/**
+	 * Set sweep time
+	 * @param seconds the sweep time */
 	public abstract void setSweepTime(double seconds);
 
-	/** @return linear/logarithm */
+	/**
+	 * Get linear/log mode
+	 * @return linear/logarithm */
 	public abstract int getSweepLinLog();
 
-	/** @param i linear/logarithm */
+	/**
+	 * Set linear/log mode
+	 * @param i linear/logarithm */
 	public abstract void setSweepLinLog(int i);
 
-	/** @param run sweep runmode */
+	/**
+	 * Set sweep state
+	 * @param run sweep runmode */
 	public abstract void setSweepState(boolean run);
 
-	/** @param mode the measure mode */
+	/**
+	 * Set measure mode
+	 * @param mode the measure mode */
 	public abstract void setMeasureMode(MeasureMode mode);
 
-	/** @param num the reset counter value */
+	/**
+	 * Reset counter
+	 * @param num the reset counter value */
 	public abstract void setResetCounter(int num);
 
-	/** @param num the measure run state */
+	/**
+	 * Set measure run state
+	 * @param num the measure run state */
 	public abstract void setMeasureRunState(int num);
 
-	/** @param num the storage index to load */
+	/**
+	 * Load settings
+	 * @param num the storage index to load */
 	public abstract void loadSettings(int num);
 
-	/** @param num the storage index to save */
+	/**
+	 * Save settings
+	 * @param num the storage index to save */
 	public abstract void saveSettings(int num);
 
-	/** @param sweepMode the mode */
+	/**
+	 * Set sweep mode
+	 * @param sweepMode the mode */
 	public abstract void setSweepMode(SweepObject sweepMode);
 
-	/** @param source the sweep source */
+	/**
+	 * Set sweep source
+	 * @param source the sweep source */
 	public abstract void setSweepSource(SweepSource source);
 
-	/** @return sweep end */
+	/**
+	 * Get sweep end
+	 *  @return sweep end */
 	public abstract double getSweepEnd();
 
-	/** @return sweep start */
+	/**
+	 * Get sweep start
+	 * @return sweep start */
 	public abstract double getSweepStart();
 
-	/** @return sweep time */
+	/**
+	 * Get sweep time
+	 *  @return sweep time */
 	public abstract double getSweepTime();
 
 	/**
-	 * @param ch     the channel
+	 * Set invert channel
+	 * @param ch the channel
 	 * @param enable enable
 	 */
 	public abstract void setInvert(int ch, boolean enable);
@@ -551,6 +680,7 @@ class PortSettings {
 	}
 
 	/**
+	 * Get flow control as string
 	 * @return flow control as string
 	 */
 	public String getFlowCtrlAsString() {
@@ -587,6 +717,11 @@ enum Parity {
 	final String name;
 	final String shortName;
 
+	/** Hidden constructor 
+	 * @param id id
+	 * @param name name
+	 * @param shortName short name
+	 */
 	private Parity(int id, String name, String shortName) {
 		this.id = id;
 		this.name = name;

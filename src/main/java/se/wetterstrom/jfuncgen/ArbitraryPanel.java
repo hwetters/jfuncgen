@@ -2,27 +2,43 @@ package se.wetterstrom.jfuncgen;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
+import net.objecthunter.exp4j.tokenizer.UnknownFunctionOrVariableException;
 
 /**
  * The arbitrary panel
@@ -52,7 +68,14 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	private final JButton btEditData = new JButton("EditData");
 	/** List of wave form function buttons */
 	private final List<JButton> funcButtons = new ArrayList<>();
-
+	/** Function expression field */
+	private final JTextField tfFunction = new JTextField("sin(x)");
+	/** Decimal number formatter */
+	private static final DecimalFormat DOUBLE_FORMATTER = new DecimalFormat("##.####");
+	/** xmin field */
+	private final JFormattedTextField tfXmin = new JFormattedTextField(DOUBLE_FORMATTER);
+	/** xmax field */
+	private final JFormattedTextField tfXmax = new JFormattedTextField(DOUBLE_FORMATTER);
 	/** the serial command */
 	private transient AbstractSerialCom serialCom;
 
@@ -86,6 +109,7 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	}
 
 	/**
+	 * Set serial
 	 * @param serialCom the serial com
 	 */
 	public void setSerial(AbstractSerialCom serialCom) {
@@ -122,65 +146,188 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 		// sin
 		IntUnaryOperator sin = x -> (int) ((Math.sin((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
 				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("sin", e -> dgc.plot(sin)));
+		funcButtons.add(createFuncbutton("sin", e -> dgc.plot(sin), "Sinus"));
 		// cos
 		IntUnaryOperator cos = x -> (int) ((Math.cos((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
 				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("cos", e -> dgc.plot(cos)));
+		funcButtons.add(createFuncbutton("cos", e -> dgc.plot(cos), "Cosinus"));
 		// tan
 		IntUnaryOperator tan = x -> (int) ((Math.tan((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
 				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("tan", e -> dgc.plot(tan)));
+		funcButtons.add(createFuncbutton("tan", e -> dgc.plot(tan), "Tangent"));
 		// square
 		IntUnaryOperator square = x -> Integer.signum(x - serialCom.getArbSize() / 2) * (serialCom.getArbMax() / 2)
 				+ (serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("Square", e -> dgc.plot(square)));
+		funcButtons.add(createFuncbutton("Square", e -> dgc.plot(square), "Square wave"));
 		// rand
 		IntUnaryOperator rnd = x -> RANDOM.nextInt(serialCom.getArbMax());
-		funcButtons.add(createFuncbutton("rnd", e -> dgc.plot(rnd)));
+		funcButtons.add(createFuncbutton("rnd", e -> dgc.plot(rnd), "Random data"));
 		// saw raising
 		ActionListener sawR = e -> {
 			dgc.drawDataLine(0, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
 			dgc.repaint();
 		};
-		funcButtons.add(createFuncbutton("SawR", sawR));
+		funcButtons.add(createFuncbutton("SawR", sawR, "Sawtooth (raising)"));
 		// saw falling
 		ActionListener sawF = e -> {
 			dgc.drawDataLine(0, serialCom.getArbMax() - 1, serialCom.getArbSize() - 1, 0);
 			dgc.repaint();
 		};
-		funcButtons.add(createFuncbutton("SawF", sawF));
+		funcButtons.add(createFuncbutton("SawF", sawF, "Sawtooth (falling)"));
 		// triangle
 		ActionListener triangle = e -> {
 			dgc.drawDataLine(0, serialCom.getArbMax() - 1, (serialCom.getArbSize() / 2) - 1, 0);
 			dgc.drawDataLine(serialCom.getArbSize() / 2, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
 			dgc.repaint();
 		};
-		funcButtons.add(createFuncbutton("triangle", triangle));
+		funcButtons.add(createFuncbutton("triangle", triangle, "Triangle wave"));
 		// flatline
 		ActionListener flat = e -> {
 			var y = (serialCom.getArbMax() - serialCom.getArbMin()) / 2;
 			dgc.drawDataLine(0, y, serialCom.getArbSize() - 1, y);
 			dgc.repaint();
 		};
-		funcButtons.add(createFuncbutton("Flat", flat));
+		funcButtons.add(createFuncbutton("Flat", flat, "Flat line"));
 		// abs
 		IntBinaryOperator abs = (x, y) -> Math.abs(y - serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2;
-		funcButtons.add(createFuncbutton("Abs", e -> dgc.plot(abs)));
+		funcButtons.add(createFuncbutton("Abs", e -> dgc.plot(abs), "Absolute values"));
 		// invert
 		IntBinaryOperator inv = (x, y) -> ((serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2) - y;
-		funcButtons.add(createFuncbutton("Invert", e -> dgc.plot(inv)));
+		funcButtons.add(createFuncbutton("Invert", e -> dgc.plot(inv), "Invert data"));
 
 		//
-		funcButtons.add(createFuncbutton("Gain", e -> dgc.gain()));
+		funcButtons.add(createFuncbutton("Gain", e -> dgc.gain(), "Gain data"));
 
-		var panel = new JPanel(new FlowLayout());
-		funcButtons.stream().forEach(panel::add);
+		var incBut = createFuncbutton("+", e -> dgc.move(10), "Increase");
+		var decBut = createFuncbutton("+", e -> dgc.move(-10), "Decrease");
+
+		MouseWheelListener ml = e -> {
+			int notches = e.getWheelRotation();
+			int sa = e.getScrollAmount();
+			int u = e.getUnitsToScroll();
+			dgc.move(notches * sa * u);
+		};
+		incBut.addMouseWheelListener(ml);
+		decBut.addMouseWheelListener(ml);
+		funcButtons.add(incBut);
+		funcButtons.add(decBut);
+
+		tfXmin.setValue(-Math.PI);
+		tfXmax.setValue(Math.PI);
+		tfXmin.setHorizontalAlignment(SwingConstants.RIGHT);
+		tfXmax.setHorizontalAlignment(SwingConstants.RIGHT);
+		tfXmin.setColumns(5);
+		tfXmax.setColumns(5);
+
+		var bPanel = new JPanel(new FlowLayout());
+		funcButtons.stream().forEach(bPanel::add);
+
+		var bEval = new JButton("Evaluate");
+		bEval.addActionListener(e -> evaluateFunction(tfFunction.getText()));
+
+		var index = new AtomicInteger(-1);
+		tfFunction.setToolTipText("<html><dl><dt><strong>Constants:</strong></dt><dd> e, &pi;, pi, &phi; </dd>"
+				+ "<dt><strong>Functions:</strong></dt><dd><i>"
+				+ Stream.of("abs", "acos", "asin", "atan", "cbrt", "ceil", "cos", "cosh", "cot", "exp", "expm1",
+						"floor", "log", "log10", "log2", "log1p", "pow", "signum", "sin", "sinh", "sqrt", "tan", "tanh")
+						.map(s -> (index.getAndIncrement() % 6 >= 5 ? "<br>" : "") + s)
+						.collect(Collectors.joining(", "))
+				+ "</i></dd></dl>");
+
+		var gbc = new GridBagConstraints();
+
+		var panel = new JPanel(new GridBagLayout());
+		GuiUtils.addToGridBag(0, 0, 5, 1, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, panel,
+				bPanel);
+
+		GuiUtils.addToGridBag(0, 1, 5, 1, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfFunction);
+		GuiUtils.addToGridBag(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				bEval);
+
+		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel(" X "));
+		GuiUtils.addToGridBag(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfXmin);
+		GuiUtils.addToGridBag(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel(" - "));
+		GuiUtils.addToGridBag(3, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfXmax);
+		GuiUtils.addToGridBag(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
+
 		return panel;
 	}
 
-	private JButton createFuncbutton(String label, ActionListener listener) {
+	private void evaluateFunction(String f) {
+		if (!Utils.isEmpty(f)) {
+			try {
+				if (!serialCom.isOnline()) {
+					serialCom.getStatusConsumer().accept(StatusBar.Status.OFFLINE, "Offline!");
+					return;
+				}
+				double xmin = Optional.ofNullable(tfXmin.getValue()).map(Number.class::cast).map(Number::doubleValue)
+						.filter(d -> !Double.isNaN(d)).orElse(0.0);
+				double xmax = Optional.ofNullable(tfXmax.getValue()).map(Number.class::cast).map(Number::doubleValue)
+						.filter(d -> !Double.isNaN(d)).orElse(0.0);
+
+				if (xmax - xmin <= 0.0) {
+					serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "Invalid X range!");
+					return;
+				}
+
+				int size = serialCom.getArbSize();
+				if (size < 1) {
+					serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "No data size!");
+					return;
+				}
+				var expr = new ExpressionBuilder(f).variables("x").build();
+				dgc.setData(fx(expr, xmin, xmax, size));
+			} catch (UnknownFunctionOrVariableException ex) {
+				serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, ex.getMessage());
+			}
+		} else {
+			serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "No function expression specified!");
+		}
+	}
+
+	private int[] fx(Expression expr, double xmin, double xmax, int size) {
+
+		double gx = (xmax - xmin) / size;
+		double[] cy = new double[size];
+
+		double cymin = Double.MAX_VALUE;
+		double cymax = Double.MIN_VALUE;
+		for (int n = 0; n < size; n++) {
+			try {
+				double x = xmin + n * gx;
+				expr.setVariable("x", x);
+				cy[n] = expr.evaluate();
+				if (!Double.isNaN(cy[n])) {
+					cymin = Math.min(cy[n], cymin);
+					cymax = Math.max(cy[n], cymax);
+				}
+			} catch (ArithmeticException ex) {
+				cy[n] = Double.NaN;
+			}
+		}
+
+		int symin = serialCom.getArbMin();
+		int symax = serialCom.getArbMax();
+		double gy = (symax - symin) / (cymax - cymin);
+		int ax = (int) (symin - cymin * gy);
+		int[] d = new int[size];
+		for (int n = 0; n < cy.length; n++) {
+			double y = Double.isNaN(cy[n]) ? 0.0 : cy[n];
+			d[n] = (int) (gy * y) + ax;
+		}
+
+		return d;
+	}
+
+	private JButton createFuncbutton(String label, ActionListener listener, String tooltip) {
 		var b = new JButton(label);
+		b.setToolTipText(tooltip);
 		b.addActionListener(listener);
 		return b;
 	}

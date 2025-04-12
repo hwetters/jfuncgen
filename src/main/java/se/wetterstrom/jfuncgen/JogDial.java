@@ -88,8 +88,8 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	@Override
 	public void paint(Graphics g) {
 
-		dialRadius = Math.min(getSize().width, getSize().height) / 2;
-		markerRadius = Math.max(1, dialRadius/5);
+		dialRadius = Math.max(8, Math.min(getSize().width, getSize().height) / 2);
+		markerRadius = Math.max(2, dialRadius/5);
 		var g2d = (Graphics2D) g;
 
 		// draw dial
@@ -236,6 +236,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Add listener
 	 * @param listener the listener
 	 */
 	public void addJogDialListener(JogDialListener listener) {
@@ -243,6 +244,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Add mouse button listener
 	 * @param listener the listener
 	 */
 	public void addMouseButtonListener(JogDialMouseListener listener) {
@@ -250,6 +252,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Get dial radius
 	 * @return the radius
 	 */
 	public int getDialRadius() {
@@ -257,6 +260,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Set dial radius
 	 * @param dialRadius the radius
 	 */
 	public void setDialRadius(int dialRadius) {
@@ -264,6 +268,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Get marker radius
 	 * @return marker radius
 	 */
 	public int getMarkerRadius() {
@@ -271,6 +276,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Set marker radius
 	 * @param markerRadius marker radius
 	 */
 	public void setMarkerRadius(int markerRadius) {
@@ -278,6 +284,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Get dial color
 	 * @return color
 	 */
 	public Color getDialColor() {
@@ -285,6 +292,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Set dial color
 	 * @param dialColor color
 	 */
 	public void setDialColor(Color dialColor) {
@@ -292,6 +300,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Get marker color
 	 * @return marker color
 	 */
 	public Color getMarkerColor() {
@@ -299,6 +308,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Set marker color
 	 * @param markerColor marker color
 	 */
 	public void setMarkerColor(Color markerColor) {
@@ -306,6 +316,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Get minimum value
 	 * @return min value
 	 */
 	public double getMinValue() {
@@ -313,37 +324,50 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	}
 
 	/**
+	 * Set minimum value
 	 * @param minValue the min value
 	 */
 	public void setMinValue(double minValue) {
 		this.minValue = minValue;
 	}
 
-	/** @return the max value */
+	/**
+	 * Get max value
+	 * @return the max value */
 	public double getMaxValue() {
 		return maxValue;
 	}
 
-	/** @param maxValue the max value */
+	/**
+	 * Set max value
+	 * @param maxValue the max value */
 	public void setMaxValue(double maxValue) {
 		this.maxValue = maxValue;
 	}
 
-	/** @return the value */
+	/**
+	 * Get value
+	 * @return the value */
 	public double getValue() {
 		return value;
 	}
 
-	/** @param value the value*/
+	/**
+	 * Set value
+	 * @param value the value*/
 	public void setValue(double value) {
 		this.value = value;
 	}
 
-	/** @return the lap step */
+	/**
+	 * Get lap step
+	 * @return the lap step */
 	public double getLapStep() {
 		return lapStep;
 	}
-	/** @param lapStep the lap step*/
+	/**
+	 * Set lap step
+	 * @param lapStep the lap step*/
 	public void setLapStep(double lapStep) {
 		this.lapStep = lapStep;
 	}
@@ -379,22 +403,30 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	        this.valueChange = valueChange;
 	    }
 
-	    /** @return the angle */
+	    /**
+	     * Get dial angle
+	     * @return the angle */
 	    public double getAngle() {
 	        return angle;
 	    }
 
-	    /** @return the change */
+	    /**
+	     * Get changed value
+	     * @return the change */
 	    public double getChange() {
 	        return change;
 	    }
 
-	    /** @return the value */
+	    /**
+	     * Get value
+	     * @return the value */
 	    public double getValue() {
 	        return value;
 	    }
 
-	    /** @return the changed value */
+	    /**
+	     * Get chaged value
+	     * @return the changed value */
 	    public double getValueChange() {
 	    	return valueChange;
 	    }
@@ -405,6 +437,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	 */
 	public interface JogDialListener extends java.util.EventListener {
 		/**
+		 * Dial adjusted event handler
 		 * @param e the jog dial event
 		 */
 	    void jobDialAdjusted(JogDialEvent e);
@@ -415,6 +448,7 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 	 */
 	public interface JogDialMouseListener extends java.util.EventListener {
 		/**
+		 * mouse button release event handler
 		 * @param e the job dial event
 		 */
 	    void mouseButtonReleased(JogDialEvent e);

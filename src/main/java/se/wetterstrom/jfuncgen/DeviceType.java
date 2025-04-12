@@ -47,6 +47,7 @@ public enum DeviceType {
 	}
 
 	/**
+	 * Get serial
 	 * @return the serial com
 	 */
 	public AbstractSerialCom getSerialCom() {

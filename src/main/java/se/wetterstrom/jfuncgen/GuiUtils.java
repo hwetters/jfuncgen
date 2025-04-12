@@ -65,6 +65,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set look and feel
 	 * @param look the look and feel
 	 */
 	public static void setLookAndFeel(LookAndFeelInfo look) {
@@ -78,6 +79,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set owner
 	 * @param newOwner the owner
 	 */
 	public static void setOwner(Component newOwner) {
@@ -85,6 +87,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Add component to gridbag
 	 * @param x x
 	 * @param y y
 	 * @param weightx weightx
@@ -100,6 +103,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Add component to gridbag
 	 * @param x x
 	 * @param y y
 	 * @param wdt wdt
@@ -117,6 +121,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Add component to gridbag
 	 * @param x x
 	 * @param y y
 	 * @param wdt wdt
@@ -128,8 +133,9 @@ public class GuiUtils {
 	 * @param gbc gbc
 	 * @param parent parent
 	 * @param component component
+	 * @return parent
 	 */
-	public static final void addToGridBag(int x, int y, int wdt, int hgt, double weightx, double weighty, int fill, int anchor,
+	public static final JComponent addToGridBag(int x, int y, int wdt, int hgt, double weightx, double weighty, int fill, int anchor,
 			GridBagConstraints gbc, JComponent parent, JComponent component) {
 		gbc.anchor = anchor;
 		gbc.weightx = weightx;
@@ -140,9 +146,11 @@ public class GuiUtils {
 		gbc.gridheight = hgt;
 		gbc.fill = fill;
 		parent.add(component, gbc);
+		return parent;
 	}
 
 	/**
+	 * Fill gridbag
 	 * @param x x
 	 * @param y y
 	 * @param colCount column count
@@ -156,6 +164,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set default font sizes
 	 * @param fontSize the font size
 	 */
 	public static final void setDefaultFonts(int fontSize) {
@@ -169,6 +178,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Show message dialog
 	 * @param parentComponent the parent component
 	 * @param message the message
 	 */
@@ -177,6 +187,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Open text file dialog
 	 * @param directory the directory
 	 * @param defaultName the default name
 	 * @param saveMode save mode
@@ -187,6 +198,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Show exception dialog
 	 * @param parent the parent
 	 * @param title the title
 	 * @param throwable the throwable
@@ -207,6 +219,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set preferred size
 	 * @param component component
 	 * @param widthFraction width fraction
 	 * @param heightFraction height fraction
@@ -217,6 +230,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set hierarchy listener
 	 * @param window the window
 	 */
 	public static void hierarchyListenerResizer(Window window) {
@@ -226,6 +240,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Open text file dialog
 	 * @param title the title
 	 * @param directory the directory
 	 * @param defaultName the default name
@@ -259,6 +274,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Convert to stacktrace string
 	 * @param throwable the throwable
 	 * @return text representation of throwable
 	 */
@@ -269,6 +285,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Get default file
 	 * @param defaultName the default name
 	 * @param extFilter the extension filter
 	 * @return the file
@@ -292,6 +309,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Get file filter
 	 * @param extName the extension name
 	 * @param extFilter the extension filter
 	 * @return the file filter
@@ -318,6 +336,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Add menu item
 	 * @param menu the menu
 	 * @param label the label
 	 * @param mnemonic the mnemonic
@@ -333,6 +352,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Set location
 	 * @param component the component
 	 * @param widthFraction the width fraction
 	 * @param heightFraction the height fraction
@@ -374,6 +394,7 @@ public class GuiUtils {
 	}
 
 	/**
+	 * Get icon
 	 * @param icon the icon name
 	 * @param iconlabel the label
 	 * @return image icon

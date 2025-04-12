@@ -40,6 +40,7 @@ public class StatusBar extends JPanel {
 	}
 
 	/**
+	 * Set port status
 	 * @param status the port status
 	 */
 	public void setPortStatus(Status status) {
@@ -49,6 +50,7 @@ public class StatusBar extends JPanel {
 	}
 
 	/**
+	 * Set message
 	 * @param msg the message
 	 */
 	public void setMessage(String msg) {
@@ -56,21 +58,24 @@ public class StatusBar extends JPanel {
 	}
 
 	/**
+	 * Set status and message
 	 * @param status the status
 	 * @param msg the message
 	 */
 	public void set(Status status, String msg) {
 		setPortStatus(status);
 		message.setText(msg);
-
 	}
 
 	/**
 	 * Status
 	 */
 	enum Status {
+		/** ONLINE */
 		ONLINE("Online", new JLabel().getBackground(), new JLabel().getForeground()),
+		/** OFFLINE */
 		OFFLINE("Offline", Color.BLACK, Color.YELLOW),
+		/** ERROR */
 		ERROR("Error", Color.BLACK, Color.RED);
 		final String msg;
 		final Color fg;
@@ -81,5 +86,4 @@ public class StatusBar extends JPanel {
 			this.fg = fg;
 		}
 	}
-
 }

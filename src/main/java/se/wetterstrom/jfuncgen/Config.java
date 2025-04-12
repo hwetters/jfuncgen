@@ -38,6 +38,8 @@ public class Config {
 	private static final BiFunction<String, Integer, Integer> GET_INTEGER = (key, defaultValue) -> Optional.ofNullable(properties.get(key)).map(Integer::valueOf).orElse(defaultValue);
 	/** the string getter operator */
 	private static final BinaryOperator<String> GET_STRING = (key, defaultValue) -> Optional.ofNullable(properties.get(key)).map(String::valueOf).orElse(defaultValue);
+	/** The default look and feel */
+	private static final String DEFAULT_LOOK = "javax.swing.plaf.metal.MetalLookAndFeel";
 
 	/** Hidden constructor */
 	private Config() {
@@ -45,6 +47,7 @@ public class Config {
 	}
 
 	/**
+	 * Get config file
 	 * @return the name of the default configuration file
 	 */
 	protected static File getConfigFile() {
@@ -90,6 +93,7 @@ public class Config {
 	}
 
 	/**
+	 * Save config
 	 * @param output the output write
 	 * @throws IOException if error
 	 */
@@ -101,6 +105,7 @@ public class Config {
 	}
 
 	/**
+	 * Set font size
 	 * @param fontSize the font size
 	 */
 	public static void setFontSize(Integer fontSize) {
@@ -113,15 +118,15 @@ public class Config {
 	}
 
 	/**
+	 * Get font size
 	 * @return the font size
 	 */
 	public static Integer getFontSize() {
 		return GET_INTEGER.apply(ConfigParameter.FONT_SIZE.key, 11);
 	}
 
-	private static final String DEFAULT_LOOK = "javax.swing.plaf.metal.MetalLookAndFeel";
-	
 	/**
+	 * Get look and feel
 	 * @return the look and feel
 	 */
 	public static LookAndFeelInfo getLook() {
@@ -139,6 +144,7 @@ public class Config {
 	}
 
 	/**
+	 * Set look and feel
 	 * @param look the look and feel
 	 */
 	public static void setLook(LookAndFeelInfo look) {
@@ -151,6 +157,7 @@ public class Config {
 	}
 
 	/**
+	 * Set device type
 	 * @param deviceType the device type
 	 */
 	public static void setDeviceType(DeviceType deviceType) {
@@ -162,6 +169,7 @@ public class Config {
 	}
 
 	/**
+	 * Get device type
 	 * @return device type
 	 */
 	public static DeviceType getDeviceType() {
@@ -175,6 +183,7 @@ public class Config {
 	}
 
 	/**
+	 * Set port
 	 * @param port the serial port
 	 */
 	public static void setPort(SerialPort port) {
@@ -186,6 +195,7 @@ public class Config {
 	}
 
 	/**
+	 * Get port
 	 * @return the serial port
 	 */
 	public static SerialPort getPort() {

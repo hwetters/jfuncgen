@@ -48,7 +48,13 @@ public class DataGraphComponent extends JPanel {
 	/** y scale */
 	private double yScale = 8.0;
 
+	/** Constructor */
+	public DataGraphComponent() {
+		super();
+	}
+
 	/**
+	 * Initialize data
 	 * @param max      maximum
 	 * @param offset   the offset
 	 * @param dataSize the data size
@@ -61,6 +67,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Set integer values
 	 * @param data the data
 	 */
 	public void setData(int[] data) {
@@ -71,6 +78,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Set double value
 	 * @param index the index
 	 * @param value the value
 	 */
@@ -81,6 +89,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Set double value
 	 * @param index the index
 	 * @param value the value
 	 */
@@ -117,6 +126,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Draw line
 	 * @param pt0 start point
 	 * @param pt1 end point
 	 */
@@ -129,6 +139,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Draw line
 	 * @param x1 x1
 	 * @param y1 y1
 	 * @param x2 x2
@@ -174,6 +185,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Handle point
 	 * @param pt0 point 1
 	 * @param pt1 point 2
 	 * @return the point
@@ -192,6 +204,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Plot integer function
 	 * @param func the plotter
 	 */
 	public void plot(IntUnaryOperator func) {
@@ -202,6 +215,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Plot integer function
 	 * @param func the plotter
 	 */
 	public void plot(IntBinaryOperator func) {
@@ -228,6 +242,17 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Move data up/down
+	 * @param dist the distance to move
+	 */
+	public void move(int dist) {
+		for (int i = 0; i < dataSize; i++) {
+			data[i] = data[i] + dist;
+		}
+		repaint();
+	}
+
+	/**
 	 * reset
 	 */
 	public void reset() {
@@ -235,6 +260,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Get data
 	 * @return the data
 	 */
 	public int[] getData() {
@@ -242,6 +268,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Trim
 	 * @param value the value
 	 * @param min   min
 	 * @param max   max
@@ -253,6 +280,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Get CSV
 	 * @return data as CSV string
 	 */
 	public String getCSV() {
@@ -264,6 +292,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Parse CSV
 	 * @param csv the CSV string to parse
 	 * @return number of values
 	 */
@@ -277,6 +306,7 @@ public class DataGraphComponent extends JPanel {
 	}
 
 	/**
+	 * Resize
 	 * @param proportion the proportion
 	 */
 	public void resize(int proportion) {

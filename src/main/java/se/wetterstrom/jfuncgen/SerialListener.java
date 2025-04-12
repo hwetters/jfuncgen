@@ -59,6 +59,7 @@ public class SerialListener implements SerialPortDataListener, Runnable {
 
 
 	/**
+	 * Poll
 	 * @param timeOut the timeout
 	 * @return the value
 	 */
@@ -85,6 +86,7 @@ public class SerialListener implements SerialPortDataListener, Runnable {
 	}
 
 	/**
+	 * Add consumer
 	 * @param consumer the consumer
 	 */
 	public void addConsumer(Consumer<String> consumer) {
@@ -92,6 +94,7 @@ public class SerialListener implements SerialPortDataListener, Runnable {
 	}
 
 	/**
+	 * Remove consumer
 	 * @param consumer the consumer
 	 */
 	public void removeConsumer(Consumer<String> consumer) {
@@ -109,7 +112,10 @@ public class SerialListener implements SerialPortDataListener, Runnable {
 		flush();
 	}
 
-	/** @return queue size */
+	/**
+	 * Get queue size
+	 * @return queue size
+	 */
 	public int size() {
 		return queue.size();
 	}
@@ -121,6 +127,7 @@ public class SerialListener implements SerialPortDataListener, Runnable {
 	}
 
 	/**
+	 * Set line break wait
 	 * @param lineBreakWait the line break wait
 	 */
 	public void setLineBreakWait(boolean lineBreakWait) {

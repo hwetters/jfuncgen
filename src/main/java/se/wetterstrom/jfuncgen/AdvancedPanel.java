@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.DoubleConsumer;
 import java.util.function.Function;
@@ -84,7 +86,8 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	/** save button */
 	private final JButton btSaveSettings = new JButton("Save");
 	/** setting number combobox */
-	private final JComboBox<Integer> cbSettingStore = new JComboBox<>( IntStream.range(0, 16).boxed().toArray(Integer[]::new));
+	private final JComboBox<Integer> cbSettingStore = new JComboBox<>(
+			IntStream.range(0, 16).boxed().toArray(Integer[]::new));
 
 	// Phase
 	/** phase number field */
@@ -110,10 +113,14 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		btRunMeasure.setEnabled(false);
 		cbGateValue.setEnabled(true);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this, setupMeasurePanel());
-		GuiUtils.addToGridBag(1, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this, setupSweepPanel());
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this, setupSettingsPanel());
-		GuiUtils.addToGridBag(1, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this, setupPhasePanel());
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
+				setupMeasurePanel());
+		GuiUtils.addToGridBag(1, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
+				setupSweepPanel());
+		GuiUtils.addToGridBag(0, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
+				setupSettingsPanel());
+		GuiUtils.addToGridBag(1, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
+				setupPhasePanel());
 
 		// measure
 		cbMeasureMode.addActionListener(e -> {
@@ -125,14 +132,14 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 				cbGateValue.setEnabled(m == MeasureMode.FREQUENCY);
 			}
 		});
-		
-		Function<Object,String> gateNameMapper = obj -> Optional.ofNullable(obj)
-				.filter(IdName.class::isInstance).map(IdName.class::cast)
-				.map(p->p.value).orElse("");		
+
+		Function<Object, String> gateNameMapper = obj -> Optional.ofNullable(obj).filter(IdName.class::isInstance)
+				.map(IdName.class::cast).map(p -> p.value).orElse("");
 		cbGateValue.setRenderer(new MappingListRenderer(gateNameMapper));
 		cbGateValue.addActionListener(e -> {
 			if (!disabled) {
-				cmd.setGateValue(((IdName)cbGateValue.getSelectedItem()).key);
+				cmd.setGateValue(Optional.ofNullable(cbGateValue.getSelectedItem()).filter(Objects::nonNull)
+						.map(IdName.class::cast).map(i -> i.key).orElse(0));
 			}
 		});
 		btExtTTL.addActionListener(e -> {
@@ -150,16 +157,13 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		tfSweepStart.addActionListener(e -> handleFreqChange(tfSweepStart, cmd::setSweepStart));
 		tfSweepEnd.addActionListener(e -> handleFreqChange(tfSweepEnd, cmd::setSweepEnd));
 		tfSweepTime.setValue(10);
-		tfSweepTime.addPropertyChangeListener("value", e ->
-			Optional.ofNullable(tfSweepTime.getValue())
-				.map(Number.class::cast)
-				.map(Number::doubleValue)
-				.ifPresent(cmd::setSweepTime));
+		tfSweepTime.addPropertyChangeListener("value", e -> Optional.ofNullable(tfSweepTime.getValue())
+				.map(Number.class::cast).map(Number::doubleValue).ifPresent(cmd::setSweepTime));
 		rbSweepModeLin.addActionListener(e -> cmd.setSweepLinLog(0));
 		rbSweepModeLog.addActionListener(e -> cmd.setSweepLinLog(1));
 		btRunSweep.setSelected(false);
 		btRunSweep.addActionListener(e -> cmd.setSweepState(btRunSweep.isSelected()));
-		cbSweepObject.addActionListener(e -> cmd.setSweepMode((SweepObject)cbSweepObject.getSelectedItem()));
+		cbSweepObject.addActionListener(e -> cmd.setSweepMode((SweepObject) cbSweepObject.getSelectedItem()));
 		cbSweepSource.addActionListener(e -> {
 			var source = (SweepSource) cbSweepSource.getSelectedItem();
 			tfSweepTime.setEditable(SweepSource.TIME == source);
@@ -167,17 +171,15 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		});
 
 		// Settings
-		btLoadSettings.addActionListener(e -> cmd.loadSettings((int)cbSettingStore.getSelectedItem()));
-		btSaveSettings.addActionListener(e -> cmd.saveSettings((int)cbSettingStore.getSelectedItem()));
-
+		btLoadSettings.addActionListener(e -> cmd.loadSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
+				.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
+		btSaveSettings.addActionListener(e -> cmd.saveSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
+				.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
 		// Phase
 		tfPhase.setValue(0);
 		tfPhase.setColumns(4);
-		tfPhase.addActionListener(e ->
-			Optional.ofNullable(tfPhase.getValue())
-				.map(Number.class::cast)
-				.map(Number::intValue)
-				.ifPresent(p -> cmd.setPhase(0, p)));
+		tfPhase.addActionListener(e -> Optional.ofNullable(tfPhase.getValue()).map(Number.class::cast)
+				.map(Number::intValue).ifPresent(p -> cmd.setPhase(0, p)));
 	}
 
 	@Override
@@ -208,6 +210,7 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	}
 
 	/**
+	 * Set serial
 	 * @param cmd the cmd
 	 */
 	public void setSerial(AbstractSerialCom cmd) {
@@ -232,28 +235,56 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		modePanel.add(rbSweepModeLin);
 		modePanel.add(rbSweepModeLog);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep start"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, tfSweepStart);
+		GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Start"));
+		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfSweepStart);
+		GuiUtils.addToGridBag(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep end"));
-		GuiUtils.addToGridBag(0, 3, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, tfSweepEnd);
+		GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("End"));
+		GuiUtils.addToGridBag(0, 3, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfSweepEnd);
+		GuiUtils.addToGridBag(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep time"));
-		GuiUtils.addToGridBag(0, 5, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, tfSweepTime);
+		GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Time"));
+		GuiUtils.addToGridBag(0, 5, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfSweepTime);
+		GuiUtils.addToGridBag(1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 6, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep mode"));
-		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, modePanel);
+		GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Mode"));
+		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, modePanel);
+		GuiUtils.addToGridBag(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 8, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep object"));
-		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, cbSweepObject);
+		GuiUtils.addToGridBag(0, 8, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Object"));
+		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbSweepObject);
+		GuiUtils.addToGridBag(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 10, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Sweep source"));
-		GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, cbSweepSource);
+		GuiUtils.addToGridBag(0, 10, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Source"));
+		GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbSweepSource);
+		GuiUtils.addToGridBag(1, 11, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.addToGridBag(0, 12, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JPanel());
-		GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.CENTER, gbc, panel, btRunSweep);
+		GuiUtils.addToGridBag(0, 12, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JPanel());
+		GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.WEST, gbc, panel,
+				btRunSweep);
+		GuiUtils.addToGridBag(1, 13, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
 
-		GuiUtils.fillGridBag(0, 14, 1, 1, gbc, panel);
+		GuiUtils.fillGridBag(0, 14, 2, 1, gbc, panel);
 
 		panel.setBorder(BorderFactory.createTitledBorder("Sweep Function"));
 
@@ -267,21 +298,31 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		var gbc = new GridBagConstraints();
 		panel.setBorder(BorderFactory.createTitledBorder("Measure Function"));
 
-		var btPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		btPanel.add(btExtTTL);
+		var btPanel = new JPanel(new GridLayout(1, 2));
 		btPanel.add(btResetCounter);
 		btPanel.add(btRunMeasure);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Measure Mode"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, cbMeasureMode);
+		GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Mode"));
+		GuiUtils.addToGridBag(0, 1, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbMeasureMode);
 
-		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Gate Time"));
-		GuiUtils.addToGridBag(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, cbGateValue);
+		GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Gate Time"));
+		GuiUtils.addToGridBag(0, 3, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbGateValue);
 
-		GuiUtils.addToGridBag(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JPanel());
-		GuiUtils.addToGridBag(0, 5, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, btPanel);
+		GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Input"));
+		GuiUtils.addToGridBag(0, 5, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				btExtTTL);
 
-		GuiUtils.fillGridBag(0, 6, 1, 1, gbc, panel);
+		GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JPanel());
+		GuiUtils.addToGridBag(0, 7, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				btPanel);
+
+		GuiUtils.fillGridBag(0, 8, 2, 1, gbc, panel);
 
 		return panel;
 	}
@@ -298,10 +339,13 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		btPanel.add(btLoadSettings);
 		btPanel.add(btSaveSettings);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Memory"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, cbSettingStore);
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Memory"));
+		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbSettingStore);
 
-		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, btPanel);
+		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				btPanel);
 
 		GuiUtils.fillGridBag(0, 3, 1, 1, gbc, panel);
 		return panel;
@@ -314,8 +358,10 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 
 		tfPhase.setHorizontalAlignment(SwingConstants.RIGHT);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Phase"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, tfPhase);
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Phase"));
+		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				tfPhase);
 		GuiUtils.fillGridBag(0, 2, 1, 1, gbc, panel);
 
 		return panel;
@@ -377,10 +423,8 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	 * SweepObject
 	 */
 	enum SweepObject {
-		FREQUENCY(0, "Frequency"),
-		AMPLITUDE(1, "Amplitude"),
-		OFFSET(2,    "Offset"),
-		DUTYCYCLE(3, "Duty cycle");
+		FREQUENCY(0, "Frequency"), AMPLITUDE(1, "Amplitude"), OFFSET(2, "Offset"), DUTYCYCLE(3, "Duty cycle");
+
 		final int id;
 		final String name;
 
@@ -399,8 +443,8 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	 * SweepSource
 	 */
 	enum SweepSource {
-		TIME(0, "Time"),
-		VCO(1, "VCO IN");
+		TIME(0, "Time"), VCO(1, "VCO IN");
+
 		final int id;
 		final String name;
 
@@ -419,9 +463,9 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	public void reload() {
 		try {
 			disabled = true;
-			tfSweepStart.setText(""+cmd.getSweepStart());
-			tfSweepEnd.setText(""+cmd.getSweepEnd());
-			tfSweepTime.setText(""+cmd.getSweepTime());
+			tfSweepStart.setText("" + cmd.getSweepStart());
+			tfSweepEnd.setText("" + cmd.getSweepEnd());
+			tfSweepTime.setText("" + cmd.getSweepTime());
 			var measureMode = cmd.getMeasureMode();
 			cbMeasureMode.setEnabled(false);
 			cbMeasureMode.setSelectedItem(measureMode);
@@ -445,5 +489,4 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 			disabled = false;
 		}
 	}
-
 }

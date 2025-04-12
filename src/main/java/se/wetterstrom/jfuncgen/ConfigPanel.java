@@ -63,6 +63,7 @@ public class ConfigPanel extends JPanel implements FuncTab {
 	private final transient Consumer<AbstractSerialCom> serialChangeConsumer;
 
 	/**
+	 * Constructor
 	 * @param serialChangeConsumer change listener
 	 */
 	public ConfigPanel(Consumer<AbstractSerialCom> serialChangeConsumer) {

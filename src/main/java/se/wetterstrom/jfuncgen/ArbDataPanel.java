@@ -56,17 +56,23 @@ public class ArbDataPanel extends JPanel {
 		}
 	}
 
-	/** @param data the data */
+	/**
+	 * Set double data
+	 * @param data the data */
 	public void setData(double[] data) {
 		model.setData(Arrays.copyOf(data, data.length));
 	}
 
-	/** @param data the data */
+	/**
+	 * Set integer data
+	 * @param data the data */
 	public void setData(int[] data) {
 		model.setData(Arrays.stream(data).asDoubleStream().toArray());
 	}
 
-	/** @return the data */
+	/**
+	 * Get double data
+	 * @return the data */
 	public double[] getData() {
 		return model.getData();
 	}
@@ -87,12 +93,16 @@ public class ArbDataPanel extends JPanel {
 			}
 		}
 
-		/** @param data the data */
+		/**
+		 * Set data
+		 * @param data the data */
 		public void setData(double[] data) {
 			this.data = data;
 		}
 
-		/** @return the data */
+		/**
+		 * Get data
+		 * @return the data */
 		public double[] getData() {
 			return data;
 		}
@@ -138,5 +148,4 @@ public class ArbDataPanel extends JPanel {
 			return col == 1;
 		}
 	}
-
 }

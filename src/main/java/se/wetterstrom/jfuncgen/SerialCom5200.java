@@ -230,6 +230,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	}
 
 	/**
+	 * Get measure running state
 	 * @return measure run state
 	 */
 	public int getMeasureRunState() {
@@ -267,6 +268,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	}
 
 	/**
+	 * Reset counter
 	 * @return reset counter
 	 */
 	public int getResetCounter() {
@@ -297,6 +299,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	}
 
 	/**
+	 * Get sweep state
 	 * @return true if sweepstate
 	 */
 	public boolean getSweepState() {

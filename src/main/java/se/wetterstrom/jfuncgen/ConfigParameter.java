@@ -47,6 +47,7 @@ public enum ConfigParameter {
 	}
 
 	/**
+	 * Check if key exists
 	 * @param key the key
 	 * @return true if key exists
 	 */

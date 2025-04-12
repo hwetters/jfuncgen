@@ -76,6 +76,7 @@ public class Utils {
 	}
 
 	/**
+	 * Write string to file
 	 * @param targetFile the file to be written to
 	 * @param string     the string to write
 	 */
@@ -91,6 +92,7 @@ public class Utils {
 	}
 
 	/**
+	 * Read file to string
 	 * @param file the file to read
 	 * @return the contents of the file
 	 */
@@ -106,6 +108,7 @@ public class Utils {
 	}
 
 	/**
+	 * Get resource
 	 * @param resourceFile the resource file
 	 * @return string
 	 */
@@ -119,6 +122,7 @@ public class Utils {
 	}
 
 	/**
+	 * Format
 	 * @param resourceFile the resource file
 	 * @param arguments    format arguments
 	 * @return string
@@ -133,6 +137,7 @@ public class Utils {
 	}
 
 	/**
+	 * Get hexdump string from bytes
 	 * @param data the data
 	 * @return string with hexdump of data
 	 */
@@ -164,10 +169,20 @@ public class Utils {
 	}
 
 	/**
+	 * Get integer as hex string
 	 * @param i the integer
 	 * @return the integer as a two character hex string
 	 */
 	public static String getIntHexString(int i) {
 		return HEX[i >>> 24 & 0xff] + HEX[i >>> 16 & 0xff] + HEX[i >>> 8 & 0xff] + HEX[i & 0xff];
+	}
+
+	/**
+	 * check if string empty
+	 * @param s the string to check
+	 * @return true if s is null or empty
+	 */
+	public static boolean isEmpty(String s) {
+		return s == null || s.isEmpty();
 	}
 }

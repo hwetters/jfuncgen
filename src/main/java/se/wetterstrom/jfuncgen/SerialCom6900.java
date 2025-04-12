@@ -63,7 +63,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public int getArbMax() {
-		return 8192;
+		return 8191;
 	}
 
 	@Override
@@ -84,7 +84,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public int getAttenuation(int channel) {
 		// FIXME
-		formatSerial(":r%dy\n", channel);
 		return 0;
 	}
 
@@ -101,7 +100,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public boolean getEnableChannel(int channel) {
 		// FIXME
-		formatSerial(":r%db\n", channel);
 		return true;
 	}
 
@@ -114,7 +112,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public int getExtTtl() {
 		// FIXME
-		writeSerial(":r4b\n");
 		return 0;
 	}
 
@@ -164,15 +161,12 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public int getOffset(int channel) {
-		// FIXME
-		formatSerial(":r%do\n", channel);
-		return 0;
+		return requestReplyInt((channel&1) == 0 ? "RFO\n" : "RMO\n", 0);
 	}
 
 	@Override
 	public int getPhase(int channel) {
 		// FIXME
-		formatSerial(":r%dp\n", channel);
 		return 0;
 	}
 
@@ -188,7 +182,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public double getSweepEnd() {
-		return 0;
+		return 0.0;
 	}
 
 	@Override
@@ -198,18 +192,17 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public double getSweepStart() {
-		return 0;
+		return 0.0;
 	}
 
 	@Override
 	public double getSweepTime() {
-		return 0;
+		return 0.0;
 	}
 
 	@Override
 	public int getTrace() {
 		// FIXME
-		writeSerial(":r3b\n");
 		return 0;
 	}
 
@@ -284,26 +277,38 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public void setArbData(int num, int[] data, ProgressMonitor pm) {
-		System.out.println(">>data.length="+data.length);
-
-		String res1 = requestReply(String.format("DDS_WAVE%d\n",num));
+		String res1 = requestReply(String.format("DDS_WAVE%d\n", (num+1) ));
 		if ("W".equals(res1)) {
-			System.out.println(">>res1="+res1);
+			System.out.println(">>OK to write data");
 
 			byte[] bd = new byte[data.length * 2];
 			for (int i = 0; i < data.length; i++) {
-				bd[i*2] = (byte)(data[i] & 0xff);
-				bd[i*2+1] = (byte)((data[i] >> 8) & 0x3f);
+				int d = Math.max(Math.min(getArbMax(), data[i]), getArbMin());
+				bd[i*2] = (byte)(d & 0x7f);
+				bd[i*2+1] = (byte)((d >> 7) & 0xff);
 			}
 
 			try {
 				serialListener.setLineBreakWait(false);
 				String res2 = requestReply(bd);
 
-				if ("HN".equals(res2)) {
-					System.out.println(">>res2="+res2);
+				if ("H".equals(res2)) {
+					System.out.println(">>Data acknowledged.");
+					// Data received
+					var res3 = poll(); // Wait for write to storage
+					if ("N".equals(res3)) {
+						System.out.println(">>Data stored OK.");
+					} else {
+						System.out.println(">>Data store failed. res3=" + res3);
+					}
+				} else if ("N".equals(res2)) {
+					// Data stored. Done.
+					System.out.println(">>Data stored OK.");
+				} else if ("HN".equals(res2)) {
+					// Received data and stored. Done.
+					System.out.println(">>Data received and stored OK.");
 				} else {
-					System.out.println(">>Write arb failed res2="+res2);
+					System.out.println(">>Write data failed. res2=" + res2 + " num=" + num);
 				}
 			} finally {
 				serialListener.setLineBreakWait(true);
@@ -312,14 +317,13 @@ public class SerialCom6900 extends AbstractSerialCom{
 			pm.setProgress(data.length);
 		} else {
 			pm.close();
-			System.out.println(">>No arb write! res1="+res1);
+			System.out.println(">>Data write failed! res1="+res1);
 		}
 	}
 
 	@Override
 	public void setAttenuation(int channel, int atten) {
 		// FIXME
-		formatSerial(":s%dy%d\n", channel, atten);
 	}
 
 	@Override
@@ -335,13 +339,11 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setEnableOutput(boolean enable) {
 		// FIXME
-		formatSerial(":s1b%d\n", enable ? 1 : 0);
 	}
 
 	@Override
 	public void setExtTtl(boolean useTtl) {
 		// FIXME
-		formatSerial(":s4b%d\n", useTtl ? 0 : 1);
 	}
 
 	@Override
@@ -364,7 +366,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setMeasureMode(MeasureMode mode) {
 		// FIXME
-		formatSerial(":s%dm\n", mode.id);
 	}
 
 	@Override
@@ -374,8 +375,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public void setOffset(int channel, int offset) {
-		// FIXME
-		formatSerial(":s%do%03d\n", channel, Math.min(Math.max(offset + 120, 0), 240));
+		formatSerial((channel&1) == 0 ? "WFO%08d\n" : "WMO%08d\n", (long) offset);
 	}
 
 	@Override
@@ -387,7 +387,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setPowerOut(boolean enable) {
 		// FIXME
-		formatSerial(":s9b%d\n", enable ? 1 : 0);
 	}
 
 
@@ -438,7 +437,6 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setTrace(boolean enable) {
 		// FIXME
-		formatSerial(":s3b%d\n", enable ? 1 : 0);
 	}
 
 	@Override

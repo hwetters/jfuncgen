@@ -49,6 +49,7 @@ public class GeneralPanel extends JPanel implements FuncTab {
 	}
 
 	/**
+	 * Set serial
 	 * @param com the com
 	 */
 	public void setSerial(AbstractSerialCom com) {

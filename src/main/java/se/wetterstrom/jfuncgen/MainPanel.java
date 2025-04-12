@@ -71,6 +71,7 @@ public class MainPanel {
 	}
 
 	/**
+	 * Create panel
 	 * @return the main panel
 	 */
 	public static MainPanel create() {
@@ -83,12 +84,16 @@ public class MainPanel {
 	}
 
 	/**
+	 * Set panel visible
 	 * @param visible if visible
 	 */
 	public void setVisible(boolean visible) {
 		frame.setVisible(visible);
 	}
 
+	/**
+	 * Setup
+	 */
 	private void setup() {
 
 		GuiUtils.setOwner(frame);
@@ -120,6 +125,7 @@ public class MainPanel {
 		});
 	}
 
+	/** Shut down */
 	private void shutdown() {
 		try {
 			Config.save();

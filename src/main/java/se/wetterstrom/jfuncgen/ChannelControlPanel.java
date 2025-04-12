@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.MouseWheelListener;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.Optional;
@@ -80,6 +81,7 @@ public class ChannelControlPanel extends JPanel {
 
 	/**
 	 * Constructor
+	 *
 	 * @param channel the channel
 	 */
 	public ChannelControlPanel(int channel) {
@@ -102,10 +104,10 @@ public class ChannelControlPanel extends JPanel {
 
 	/** reload */
 	public void reload() {
-		tfFreq.setText(""+cmd.getFrequency(channel));
-		ttAmplitude.setText(""+cmd.getAmplitude(channel));
-		ttDuty.setText(""+cmd.getDutyCycle(channel));
-		ttOffset.setText(""+cmd.getOffset(channel));
+		tfFreq.setText("" + cmd.getFrequency(channel));
+		ttAmplitude.setText("" + cmd.getAmplitude(channel));
+		ttDuty.setText("" + cmd.getDutyCycle(channel));
+		ttOffset.setText("" + cmd.getOffset(channel));
 
 		int w = cmd.getWaveForm(channel);
 		cbWaveType.setEnabled(false);
@@ -124,6 +126,7 @@ public class ChannelControlPanel extends JPanel {
 	}
 
 	/**
+	 * Set serial
 	 * @param cmd the serial command
 	 */
 	public void setSerial(AbstractSerialCom cmd) {
@@ -134,20 +137,27 @@ public class ChannelControlPanel extends JPanel {
 		cmd.getWaveTypes(channel).forEach(cbWaveType::addItem);
 		cbWaveType.setEnabled(true);
 		jdFreq.setMaxValue(f);
-		tfFreq.setToolTipText("The frequency in Hz (default), kHz, Mhz or GHz (0 to "+(((int)f)/1000000)+" MHz).");
+		tfFreq.setToolTipText(
+				"The frequency in Hz (default), kHz, Mhz or GHz (0 to " + (((int) f) / 1000000) + " MHz).");
 	}
 
+	/**
+	 * Set lap speed
+	 * @param lapSpeed
+	 */
 	private void setLapSpeed(double lapSpeed) {
-		double speed = Math.max(0.1, lapSpeed );
+		double speed = Math.max(0.1, lapSpeed);
 		jdFreq.setLapStep(speed);
-		btSpeedInc.setToolTipText("Increase value by "+speed+" per lap");
-		btSpeedDec.setToolTipText("Decrease value by "+speed+" per lap");
+		btSpeedInc.setToolTipText("Increase value by " + speed + " per lap");
+		btSpeedDec.setToolTipText("Decrease value by " + speed + " per lap");
 	}
 
+	/** Setup */
 	private void setup() {
 		setLayout(new GridBagLayout());
 		var gbc = new GridBagConstraints();
-		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "CH" + channel));
+		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Channel " + channel));
 
 		jdFreq.setMinValue(0.0);
 		jdFreq.setMaxValue(25000000);
@@ -158,10 +168,10 @@ public class ChannelControlPanel extends JPanel {
 		ttOffset.setValue(0.0);
 		rb0db.setSelected(true);
 
-		btSpeedInc.setMargin(new Insets(0,0,0,0));
-		btSpeedInc.addActionListener(e -> setLapSpeed(jdFreq.getLapStep() * 10.0 ));
-		btSpeedDec.setMargin(new Insets(0,0,0,0));
-		btSpeedDec.addActionListener(e -> setLapSpeed(jdFreq.getLapStep() / 10.0 ));
+		btSpeedInc.setMargin(new Insets(0, 0, 0, 0));
+		btSpeedInc.addActionListener(e -> setLapSpeed(jdFreq.getLapStep() * 10.0));
+		btSpeedDec.setMargin(new Insets(0, 0, 0, 0));
+		btSpeedDec.addActionListener(e -> setLapSpeed(jdFreq.getLapStep() / 10.0));
 		btSpeedDec.setPreferredSize(btSpeedInc.getPreferredSize());
 
 		var v1 = new JPanel(new BorderLayout());
@@ -171,21 +181,38 @@ public class ChannelControlPanel extends JPanel {
 		v2.add(btSpeedDec, BorderLayout.NORTH);
 
 		var speedPanel = new JPanel(new BorderLayout());
-		speedPanel.add(v1,BorderLayout.WEST);
+		speedPanel.add(v1, BorderLayout.WEST);
 		speedPanel.add(jdFreq, BorderLayout.CENTER);
-		speedPanel.add(v2,BorderLayout.EAST);
+		speedPanel.add(v2, BorderLayout.EAST);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this, getEditFieldsPanel());
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc, this, getButtonPanel());
-		GuiUtils.addToGridBag(1, 0, 1, 2, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.CENTER, gbc, this, speedPanel);
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
+				getEditFieldsPanel());
+		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				this, getButtonPanel());
+		GuiUtils.addToGridBag(1, 0, 1, 2, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.CENTER, gbc, this,
+				speedPanel);
 
 		GuiUtils.fillGridBag(0, 2, 1, 1, gbc, this);
 
 		var df = new DecimalFormat("#0.00");
 		jdFreq.addJogDialListener(ev -> tfFreq.setText(df.format(ev.getValue())));
 		jdFreq.addMouseButtonListener(ev -> handleFreqChange());
+
+		MouseWheelListener ml = e -> {
+			try {
+				double f = Utils.parseFreq(tfFreq.getText()) + jdFreq.getLapStep()
+						* ((double) (e.getWheelRotation() * e.getScrollAmount() * Math.abs(e.getUnitsToScroll())));
+				tfFreq.setText(df.format(Math.max(f, 0)));
+				handleFreqChange();
+			} catch (ParseException e1) {
+				// ignore
+			}
+		};
+		jdFreq.addMouseWheelListener(ml);
+		tfFreq.addMouseWheelListener(ml);
 	}
 
+	/** Get edit fields panel */
 	private JPanel getEditFieldsPanel() {
 		var panel = new JPanel(new GridBagLayout());
 		var gbc = new GridBagConstraints();
@@ -206,26 +233,32 @@ public class ChannelControlPanel extends JPanel {
 		rbPanel.add(rb0db);
 		rbPanel.add(rb20db);
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Waveform"));
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Waveform"));
 		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, cbWaveType);
 
-		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Frequency"));
+		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Frequency"));
 		GuiUtils.addToGridBag(0, 3, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, tfFreq);
 
-		GuiUtils.addToGridBag(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Amplitude"));
+		GuiUtils.addToGridBag(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Amplitude"));
 		GuiUtils.addToGridBag(0, 5, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, ttAmplitude);
 
-		GuiUtils.addToGridBag(0, 6, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Duty"));
+		GuiUtils.addToGridBag(0, 6, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Duty"));
 		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, ttDuty);
 
-		GuiUtils.addToGridBag(0, 8, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Offset"));
+		GuiUtils.addToGridBag(0, 8, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Offset"));
 		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, ttOffset);
 
-		GuiUtils.addToGridBag(0, 10, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, new JLabel("Attenuation"));
+		GuiUtils.addToGridBag(0, 10, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JLabel("Attenuation"));
 		GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, gbc, panel, rbPanel);
 
-		rb0db.addActionListener(e->cmd.setAttenuation(channel, 0));
-		rb20db.addActionListener(e->cmd.setAttenuation(channel, 1));
+		rb0db.addActionListener(e -> cmd.setAttenuation(channel, 0));
+		rb20db.addActionListener(e -> cmd.setAttenuation(channel, 1));
 
 		tfFreq.addActionListener(e -> handleFreqChange());
 		cbWaveType.addActionListener(e -> {
@@ -234,19 +267,16 @@ public class ChannelControlPanel extends JPanel {
 			}
 		});
 
-		String propertyName="value";
-		
-		ttAmplitude.addPropertyChangeListener(propertyName, e->
-			Optional.ofNullable(ttAmplitude.getValue()).map(Number.class::cast).map(Number::doubleValue)
-			.ifPresent(n -> cmd.setAmplitude(channel,n)));
+		String propertyName = "value";
 
-		ttDuty.addPropertyChangeListener(propertyName, e->
-			Optional.ofNullable(ttDuty.getValue()).map(Number.class::cast).map(Number::doubleValue)
-			.ifPresent(n -> cmd.setDutyCycle(channel, n)));
+		ttAmplitude.addPropertyChangeListener(propertyName, e -> Optional.ofNullable(ttAmplitude.getValue())
+				.map(Number.class::cast).map(Number::doubleValue).ifPresent(n -> cmd.setAmplitude(channel, n)));
 
-		ttOffset.addPropertyChangeListener(propertyName, e->
-			Optional.ofNullable(ttOffset.getValue()).map(Number.class::cast).map(Number::intValue)
-			.ifPresent(n -> cmd.setOffset(channel, n)));
+		ttDuty.addPropertyChangeListener(propertyName, e -> Optional.ofNullable(ttDuty.getValue())
+				.map(Number.class::cast).map(Number::doubleValue).ifPresent(n -> cmd.setDutyCycle(channel, n)));
+
+		ttOffset.addPropertyChangeListener(propertyName, e -> Optional.ofNullable(ttOffset.getValue())
+				.map(Number.class::cast).map(Number::intValue).ifPresent(n -> cmd.setOffset(channel, n)));
 
 		return panel;
 	}
@@ -259,8 +289,10 @@ public class ChannelControlPanel extends JPanel {
 
 		btInvert.addActionListener(e -> cmd.setInvert(channel, btInvert.isSelected()));
 
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, btEnable);
-		GuiUtils.addToGridBag(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel, btInvert);
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				btEnable);
+		GuiUtils.addToGridBag(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				btInvert);
 
 		return panel;
 	}

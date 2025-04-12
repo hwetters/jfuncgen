@@ -24,7 +24,13 @@ import java.io.IOException;
  */
 public class JFuncGen {
 
+	/** Hidden constructor */
+	private JFuncGen() {
+		super();
+	}
+
 	/**
+	 * The main
 	 * @param args command line arguments
 	 */
 	public static void main(String[] args) {
