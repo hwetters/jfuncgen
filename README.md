@@ -1,6 +1,7 @@
 # jFuncGen
 
-jFuncGen is a java GUI for the MHS5200 and FY6900 function generators.
+jFuncGen is a Java GUI for the MHS-5200 and FY6900 function generators.
+It should work with all operating systems with a Java 17 runtime (or newer) and is supported by [jSerialComm](https://fazecast.github.io/jSerialComm/).
 
 ## System requirements
 
