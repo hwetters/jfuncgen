@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>wetterstrom</groupId>
 	<artifactId>jfuncgen</artifactId>
-	<version>0.2</version>
+	<version>0.2.1</version>
 	<name>JFuncGen</name>
 	<description>Java GUI for MHS5200 and FY6900 function generators</description>
 

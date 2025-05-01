@@ -284,7 +284,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 			byte[] bd = new byte[data.length * 2];
 			for (int i = 0; i < data.length; i++) {
-				int d = Math.clamp(getArbMax(), data[i], getArbMin());
+				int d = Math.clamp(data[i], getArbMin(), getArbMax());
 				bd[i*2] = (byte)(d & 0x7f);
 				bd[i*2+1] = (byte)((d >> 7) & 0xff);
 			}
