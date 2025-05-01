@@ -9,6 +9,7 @@ import javax.swing.ProgressMonitor;
 import com.fazecast.jSerialComm.SerialPort;
 
 import se.wetterstrom.jfuncgen.AdvancedPanel.MeasureMode;
+import se.wetterstrom.jfuncgen.AdvancedPanel.SweepDirection;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepObject;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepSource;
 
@@ -279,11 +280,11 @@ public class SerialCom6900 extends AbstractSerialCom{
 	public void setArbData(int num, int[] data, ProgressMonitor pm) {
 		String res1 = requestReply(String.format("DDS_WAVE%d\n", (num+1) ));
 		if ("W".equals(res1)) {
-			System.out.println(">>OK to write data");
+			statusConsumer.accept(StatusBar.Status.ONLINE, "OK to write data.");
 
 			byte[] bd = new byte[data.length * 2];
 			for (int i = 0; i < data.length; i++) {
-				int d = Math.max(Math.min(getArbMax(), data[i]), getArbMin());
+				int d = Math.clamp(getArbMax(), data[i], getArbMin());
 				bd[i*2] = (byte)(d & 0x7f);
 				bd[i*2+1] = (byte)((d >> 7) & 0xff);
 			}
@@ -293,22 +294,22 @@ public class SerialCom6900 extends AbstractSerialCom{
 				String res2 = requestReply(bd);
 
 				if ("H".equals(res2)) {
-					System.out.println(">>Data acknowledged.");
+					statusConsumer.accept(StatusBar.Status.ONLINE, "Data acknowledged.");
 					// Data received
 					var res3 = poll(); // Wait for write to storage
 					if ("N".equals(res3)) {
-						System.out.println(">>Data stored OK.");
+						statusConsumer.accept(StatusBar.Status.ONLINE, "Data stored OK.");
 					} else {
-						System.out.println(">>Data store failed. res3=" + res3);
+						statusConsumer.accept(StatusBar.Status.ONLINE, "Data failed. "+res3);
 					}
 				} else if ("N".equals(res2)) {
 					// Data stored. Done.
-					System.out.println(">>Data stored OK.");
+					statusConsumer.accept(StatusBar.Status.ONLINE, "Data stored OK.");
 				} else if ("HN".equals(res2)) {
 					// Received data and stored. Done.
-					System.out.println(">>Data received and stored OK.");
+					statusConsumer.accept(StatusBar.Status.ONLINE, "Data receiver and stored OK.");
 				} else {
-					System.out.println(">>Write data failed. res2=" + res2 + " num=" + num);
+					statusConsumer.accept(StatusBar.Status.ONLINE, "Write data failed. "+res2+" num");
 				}
 			} finally {
 				serialListener.setLineBreakWait(true);
@@ -317,7 +318,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 			pm.setProgress(data.length);
 		} else {
 			pm.close();
-			System.out.println(">>Data write failed! res1="+res1);
+			statusConsumer.accept(StatusBar.Status.ONLINE, "Data write failed. "+res1);
 		}
 	}
 
@@ -410,6 +411,10 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setSweepMode(SweepObject sweepMode) {
 		formatSerial("SOB%d\n", sweepMode.id);
+	}
+
+	public void setSweepDirection(SweepDirection sweepDirection) {
+		// FIXME
 	}
 
 	@Override

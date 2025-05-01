@@ -214,20 +214,20 @@ public class JogDial extends JComponent implements MouseListener, MouseMotionLis
 		int mxp = mx - dialRadius;
 		int myp = dialRadius - my;
 		lastAngle = Math.atan2(mxp, myp);
-        angleDiff = lastAngle - previousAngle;
-        if (angleDiff > Math.PI) {
-        	angleDiff -= Math.PI * 2;
-        }
-        if (angleDiff < -Math.PI) {
-        	angleDiff += Math.PI * 2;
-        }
+		angleDiff = lastAngle - previousAngle;
+		if (angleDiff > Math.PI) {
+			angleDiff -= Math.PI * 2;
+		}
+		if (angleDiff < -Math.PI) {
+			angleDiff += Math.PI * 2;
+		}
 
-        double diffValue = 0.0;
-        if (angleDiff != 0) {
-        	var newValue = Math.min(Math.max(value + lapStep * (angleDiff / Math.PI), minValue), maxValue);
-        	diffValue = newValue - value;
-        	value = newValue;
-        }
+		double diffValue = 0.0;
+		if (angleDiff != 0) {
+			var newValue = Math.clamp(value + lapStep * (angleDiff / Math.PI), minValue, maxValue);
+			diffValue = newValue - value;
+			value = newValue;
+		}
 
 		repaint();
 

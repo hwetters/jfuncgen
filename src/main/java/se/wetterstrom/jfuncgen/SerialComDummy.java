@@ -9,6 +9,7 @@ import javax.swing.ProgressMonitor;
 import com.fazecast.jSerialComm.SerialPort;
 
 import se.wetterstrom.jfuncgen.AdvancedPanel.MeasureMode;
+import se.wetterstrom.jfuncgen.AdvancedPanel.SweepDirection;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepObject;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepSource;
 
@@ -295,4 +296,7 @@ public class SerialComDummy extends AbstractSerialCom {
 	public boolean getEnableOutput() {
 		return false;
 	}
+
+	@Override
+	public void setSweepDirection(SweepDirection dir) {	/* unused */ }
 }

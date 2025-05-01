@@ -13,6 +13,7 @@ import javax.swing.ProgressMonitor;
 import com.fazecast.jSerialComm.SerialPort;
 
 import se.wetterstrom.jfuncgen.AdvancedPanel.MeasureMode;
+import se.wetterstrom.jfuncgen.AdvancedPanel.SweepDirection;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepObject;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepSource;
 
@@ -121,13 +122,12 @@ public abstract class AbstractSerialCom {
 		return port.filter(SerialPort::isOpen).map(p -> {
 			outputConsumers.forEach(c -> c.accept(Utils.hexDump(data)));
 			int count = p.writeBytes(data, data.length, 0);
-			System.out.println(">>Write bytes.length "+data.length);
-			System.out.println(">>Write bytes.length "+data.length+" count="+count);
+			statusConsumer.accept(StatusBar.Status.ONLINE, "Write bytes.length "+data.length+" count="+count);
 			if (count == -1) {
 				statusConsumer.accept(StatusBar.Status.ERROR, "Write error");
 				return false;
 			} else {
-				statusConsumer.accept(StatusBar.Status.ONLINE, "");
+				statusConsumer.accept(StatusBar.Status.ONLINE, "Write data completed");
 				return true;
 			}
 		}).orElseGet(() -> {
@@ -240,11 +240,37 @@ public abstract class AbstractSerialCom {
 				statusConsumer.accept(StatusBar.Status.OFFLINE, "Failed to connect");
 			} else {
 				statusConsumer.accept(StatusBar.Status.ONLINE,
-						"Connected " + getDeviceType() + " on " + p.getSystemPortName());
+						"Connected " + getDeviceType() + " on " + toString(p));
 				p.removeDataListener();
 				p.addDataListener(serialListener);
 			}
 		});
+	}
+
+	/**
+	 * Serial port to string
+	 * @param p the port
+	 * @return string
+	 */
+	public static String toString(SerialPort p) {
+		return p.getSystemPortName() + ' ' + p.getBaudRate() + ' '
+				+ p.getNumDataBits() + parity(p.getParity()) + p.getNumStopBits();
+	}
+
+	/**
+	 * Get character representation of the SerialPort parity
+	 * @param p the parity integer
+	 * @return the character
+	 */
+	public static char parity(int p) {
+		switch (p) {
+		case SerialPort.NO_PARITY: return 'N';
+		case SerialPort.ODD_PARITY: return 'O';
+		case SerialPort.EVEN_PARITY:return 'E';
+		case SerialPort.MARK_PARITY:return 'M';
+		case SerialPort.SPACE_PARITY:return 'S';
+		default:return '?';
+		}
 	}
 
 	/**
@@ -644,6 +670,11 @@ public abstract class AbstractSerialCom {
 	 */
 	public abstract void setInvert(int ch, boolean enable);
 
+	/**
+	 * Set sweep direction
+	 * @param dir the direction
+	 */
+	public abstract void setSweepDirection(SweepDirection dir);
 }
 
 /**

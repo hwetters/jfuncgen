@@ -19,7 +19,7 @@ public class UtilsTest {
 	}
 
 	@Test(expected=IllegalArgumentException.class)
-	public void testWriteFileNull() throws IOException {
+	public void testWriteFileNull() {
 		Utils.writeFile(null, "1234567890");
 	}
 
@@ -29,7 +29,7 @@ public class UtilsTest {
 	}
 
 	@Test(expected=IllegalArgumentException.class)
-	public void testWriteBadFile() throws IOException {
+	public void testWriteBadFile() {
 		Utils.writeFile(new File("/this/file/can/not/be/saved"), "1234567890");
 	}
 

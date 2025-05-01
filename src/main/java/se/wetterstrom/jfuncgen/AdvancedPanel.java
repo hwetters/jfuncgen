@@ -79,7 +79,8 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	private final JComboBox<SweepObject> cbSweepObject = new JComboBox<>(SweepObject.values());
 	/** sweep source combobox */
 	private final JComboBox<SweepSource> cbSweepSource = new JComboBox<>(SweepSource.values());
-
+	/** sweep direction combobox */
+	private final JComboBox<SweepDirection> cbSweepDirection = new JComboBox<>(SweepDirection.values());
 	// Settings
 	/** load button */
 	private final JButton btLoadSettings = new JButton("Load");
@@ -169,6 +170,10 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 			tfSweepTime.setEditable(SweepSource.TIME == source);
 			cmd.setSweepSource(source);
 		});
+		cbSweepDirection.addActionListener(e->{
+			var dir = (SweepDirection) cbSweepDirection.getSelectedItem();
+			cmd.setSweepDirection(dir);
+		});
 
 		// Settings
 		btLoadSettings.addActionListener(e -> cmd.loadSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
@@ -201,6 +206,7 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		btRunSweep.setEnabled(enable);
 		cbSweepObject.setEnabled(enable);
 		cbSweepSource.setEnabled(enable);
+		cbSweepDirection.setEditable(enable);
 
 		btLoadSettings.setEnabled(enable);
 		btSaveSettings.setEnabled(enable);
@@ -257,34 +263,41 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 				panel, new JPanel());
 
 		GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Mode"));
-		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, modePanel);
+				new JLabel("Direction"));
+		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbSweepDirection);
 		GuiUtils.addToGridBag(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
 				panel, new JPanel());
 
 		GuiUtils.addToGridBag(0, 8, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Object"));
-		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSweepObject);
+				new JLabel("Mode"));
+		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, modePanel);
 		GuiUtils.addToGridBag(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
 				panel, new JPanel());
 
 		GuiUtils.addToGridBag(0, 10, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Source"));
+				new JLabel("Object"));
 		GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSweepSource);
+				cbSweepObject);
 		GuiUtils.addToGridBag(1, 11, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
 				panel, new JPanel());
 
 		GuiUtils.addToGridBag(0, 12, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JPanel());
-		GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.WEST, gbc, panel,
-				btRunSweep);
+				new JLabel("Source"));
+		GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				cbSweepSource);
 		GuiUtils.addToGridBag(1, 13, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
 				panel, new JPanel());
 
-		GuiUtils.fillGridBag(0, 14, 2, 1, gbc, panel);
+		GuiUtils.addToGridBag(0, 14, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
+				new JPanel());
+		GuiUtils.addToGridBag(0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.WEST, gbc, panel,
+				btRunSweep);
+		GuiUtils.addToGridBag(1, 15, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+				panel, new JPanel());
+
+		GuiUtils.fillGridBag(0, 16, 2, 1, gbc, panel);
 
 		panel.setBorder(BorderFactory.createTitledBorder("Sweep Function"));
 
@@ -449,6 +462,26 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		final String name;
 
 		private SweepSource(int id, String name) {
+			this.id = id;
+			this.name = name;
+		}
+
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
+
+	/**
+	 * SweepDirection
+	 */
+	enum SweepDirection {
+		FORTH(0, "Forth"), BACK(1, "Back"), FORTH_BACK(2, "Forth to Back");
+
+		final int id;
+		final String name;
+
+		private SweepDirection(int id, String name) {
 			this.id = id;
 			this.name = name;
 		}

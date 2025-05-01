@@ -50,6 +50,7 @@ public class MainPanel {
 	 */
 	private MainPanel(JFrame frame) {
 		this.frame = frame;
+		statusBar.setParentFrame(frame);
 		setSerial(DeviceType.NONE.getSerialCom());
 		DeviceType.setStatusConsumer(statusBar::set);
 		DeviceType.setDataConsumer(s -> {

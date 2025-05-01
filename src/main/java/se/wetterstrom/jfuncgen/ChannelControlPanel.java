@@ -201,7 +201,7 @@ public class ChannelControlPanel extends JPanel {
 		MouseWheelListener ml = e -> {
 			try {
 				double f = Utils.parseFreq(tfFreq.getText()) + jdFreq.getLapStep()
-						* ((double) (e.getWheelRotation() * e.getScrollAmount() * Math.abs(e.getUnitsToScroll())));
+						* (e.getWheelRotation() * e.getScrollAmount() * Math.abs(e.getUnitsToScroll()));
 				tfFreq.setText(df.format(Math.max(f, 0)));
 				handleFreqChange();
 			} catch (ParseException e1) {

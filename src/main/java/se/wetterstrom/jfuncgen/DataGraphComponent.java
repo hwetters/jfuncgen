@@ -103,11 +103,12 @@ public class DataGraphComponent extends JPanel {
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
+		int ymax = getHeight();
 		xScale = ((double) dataSize) / getWidth();
-		yScale = ((double) max) / getHeight();
+		yScale = ((double) max) / ymax;
 
 		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, getWidth(), getHeight());
+		g.fillRect(0, 0, getWidth(), ymax);
 
 		var g2d = (Graphics2D) g;
 
@@ -119,8 +120,11 @@ public class DataGraphComponent extends JPanel {
 
 		g2d.setPaint(Color.GRAY);
 		for (int x0 = 0, x1 = 0; x1 < dataSize; x1++) {
-			g2d.drawLine((int) (x0 / xScale), (int) (data[x0] / yScale), (int) (x1 / xScale),
-					(int) (data[x1] / yScale));
+			g2d.drawLine(
+					(int) (x0 / xScale),
+					ymax - ((int) (data[x0] / yScale)),
+					(int) (x1 / xScale),
+					ymax - ((int) (data[x1] / yScale)));
 			x0 = x1;
 		}
 	}
@@ -276,7 +280,7 @@ public class DataGraphComponent extends JPanel {
 	 * @return trim
 	 */
 	private int trim(int value, int min, int max, double scale) {
-		return Math.min(Math.max((int) (value * scale), min), max);
+		return Math.clamp((int) (value * scale), min, max);
 	}
 
 	/**

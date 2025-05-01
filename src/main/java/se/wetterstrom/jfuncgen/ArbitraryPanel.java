@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
@@ -69,7 +70,7 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	/** List of wave form function buttons */
 	private final List<JButton> funcButtons = new ArrayList<>();
 	/** Function expression field */
-	private final JTextField tfFunction = new JTextField("sin(x)");
+	private final JTextField tfFunction = new JTextField("abs(sin(xx*x))");
 	/** Decimal number formatter */
 	private static final DecimalFormat DOUBLE_FORMATTER = new DecimalFormat("##.####");
 	/** xmin field */
@@ -198,13 +199,13 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 		//
 		funcButtons.add(createFuncbutton("Gain", e -> dgc.gain(), "Gain data"));
 
-		var incBut = createFuncbutton("+", e -> dgc.move(10), "Increase");
-		var decBut = createFuncbutton("+", e -> dgc.move(-10), "Decrease");
+		var incBut = createFuncbutton("+", e -> dgc.move(10), "Increase (up)");
+		var decBut = createFuncbutton("-", e -> dgc.move(-10), "Decrease (down)");
 
 		MouseWheelListener ml = e -> {
 			int notches = e.getWheelRotation();
-			int sa = e.getScrollAmount();
-			int u = e.getUnitsToScroll();
+			int sa = e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL ? Math.abs(e.getScrollAmount()) : 1;
+			int u = Math.abs(e.getUnitsToScroll());
 			dgc.move(notches * sa * u);
 		};
 		incBut.addMouseWheelListener(ml);
@@ -423,7 +424,9 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 		@Override
 		public void mouseDragged(MouseEvent e) {
 			if (enabled) {
-				lastPt = dgc.handlePoint(lastPt, e.getPoint());
+				var p = e.getPoint();
+				p.y = dgc.getHeight() - p.y;
+				lastPt = dgc.handlePoint(lastPt, p);
 				repaint();
 			}
 		}

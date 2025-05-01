@@ -1,5 +1,7 @@
 package se.wetterstrom.jfuncgen;
 
+import java.awt.Dialog;
+import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -184,5 +186,15 @@ public class Utils {
 	 */
 	public static boolean isEmpty(String s) {
 		return s == null || s.isEmpty();
+	}
+
+	/**
+	 * Add hierarchy listener to window
+	 * @param window the window
+	 */
+	public static void hierarchyListenerResizer(Window window) {
+		if (window instanceof Dialog dialog && !dialog.isResizable()) {
+			dialog.setResizable(true);
+		}
 	}
 }

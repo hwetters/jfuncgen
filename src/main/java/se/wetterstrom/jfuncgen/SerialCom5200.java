@@ -11,6 +11,7 @@ import javax.swing.ProgressMonitor;
 import com.fazecast.jSerialComm.SerialPort;
 
 import se.wetterstrom.jfuncgen.AdvancedPanel.MeasureMode;
+import se.wetterstrom.jfuncgen.AdvancedPanel.SweepDirection;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepObject;
 import se.wetterstrom.jfuncgen.AdvancedPanel.SweepSource;
 
@@ -373,7 +374,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	@Override
 	public void setAmplitude(int channel, double amplitude) {
 		// :s[12]a[0-9]+ - set amplitude
-		formatSerial(":s%da%d\n", channel,  Math.min(Math.max((int)(amplitude * 100),0), 2000));
+		formatSerial(":s%da%d\n", channel,  Math.clamp((int)(amplitude * 100),0, 2000));
 	}
 
 	@Override
@@ -409,7 +410,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	@Override
 	public void setDutyCycle(int channel, double duty) {
 		// :s[12]d[0-9]+ - set duty cycle (123 = 12.3%)
-		formatSerial(":s%dd%03d\n", channel, Math.min(Math.max((int)(duty * 10), 0), 999));
+		formatSerial(":s%dd%03d\n", channel, Math.clamp((int)(duty * 10), 0, 999));
 	}
 
 	@Override
@@ -463,7 +464,7 @@ public class SerialCom5200 extends AbstractSerialCom{
 	@Override
 	public void setOffset(int channel, int offset) {
 		// :s[12]o[0-9]+ set offset
-		formatSerial(":s%do%03d\n", channel, Math.min(Math.max(offset + 120, 0), 240));
+		formatSerial(":s%do%03d\n", channel, Math.clamp(offset + 120L, 0L, 240L));
 	}
 
 	@Override
@@ -534,5 +535,10 @@ public class SerialCom5200 extends AbstractSerialCom{
 			// :s[12]w[0-9]+ - set wave type
 			formatSerial(":s%dw%03d\n", channel, waveform.getId());
 		}
+	}
+
+	@Override
+	public void setSweepDirection(SweepDirection dir) {
+		// FXIME
 	}
 }
