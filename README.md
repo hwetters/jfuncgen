@@ -6,7 +6,7 @@ It has been tested and known to work with Linux. See [jSerialComm](https://fazec
 
 ## System requirements
 
-Java 17 runtime or newer. Download [OpenJDK](http://adoptopenjdk.net/) or [Oracle JDK](http://java.oracle.com).
+Java 21 runtime or newer. Download [OpenJDK](http://adoptopenjdk.net/) or [Oracle JDK](http://java.oracle.com).
 
 ## Supported function generators
 
