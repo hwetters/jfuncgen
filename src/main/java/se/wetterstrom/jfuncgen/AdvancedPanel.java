@@ -155,6 +155,10 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		btRunMeasure.addActionListener(e -> cmd.setMeasureRunState(btRunMeasure.isSelected() ? 1 : 0));
 
 		// sweep
+		tfSweepStart.setColumns(12);
+		tfSweepEnd.setColumns(12);
+		tfSweepTime.setColumns(12);
+
 		tfSweepStart.addActionListener(e -> handleFreqChange(tfSweepStart, cmd::setSweepStart));
 		tfSweepEnd.addActionListener(e -> handleFreqChange(tfSweepEnd, cmd::setSweepEnd));
 		tfSweepTime.setValue(10);
