@@ -3,6 +3,7 @@ package se.wetterstrom.jfuncgen;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -206,7 +207,7 @@ public abstract class AbstractSerialCom {
 	 * @param args the arguments
 	 */
 	public void formatSerial(String fmt, Object... args) {
-		writeSerial(String.format(fmt, args));
+		writeSerial(String.format(Locale.US, fmt, args));
 	}
 
 	/**
@@ -487,28 +488,28 @@ public abstract class AbstractSerialCom {
 	 * @param channel the channel
 	 * @return the offset
 	 */
-	public abstract int getOffset(int channel);
+	public abstract double getOffset(int channel);
 
 	/**
 	 * Set offset
 	 * @param channel the channel
 	 * @param offset  the offset
 	 */
-	public abstract void setOffset(int channel, int offset);
+	public abstract void setOffset(int channel, double offset);
 
 	/**
 	 * Get phase
 	 * @param channel the channel
 	 * @return the phase
 	 */
-	public abstract int getPhase(int channel);
+	public abstract double getPhase(int channel);
 
 	/**
 	 * Set phase
 	 * @param channel the channel
 	 * @param phase   the phase
 	 */
-	public abstract void setPhase(int channel, int phase);
+	public abstract void setPhase(int channel, double phase);
 
 	/**
 	 * Get attenuation

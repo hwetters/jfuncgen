@@ -102,7 +102,7 @@ public class SerialComDummy extends AbstractSerialCom {
 
 	@Override
 	public double getMaxFrequency() {
-		return 0;
+		return 1000;
 	}
 
 	@Override
@@ -111,13 +111,13 @@ public class SerialComDummy extends AbstractSerialCom {
 	}
 
 	@Override
-	public int getOffset(int channel) {
-		return 0;
+	public double getOffset(int channel) {
+		return 0.0;
 	}
 
 	@Override
-	public int getPhase(int channel) {
-		return 0;
+	public double getPhase(int channel) {
+		return 0.0;
 	}
 
 	@Override
@@ -137,7 +137,9 @@ public class SerialComDummy extends AbstractSerialCom {
 
 	@Override
 	public List<WaveType> getWaveTypes(int channel) {
-		return Collections.unmodifiableList(new ArrayList<WaveType>());
+		var list = new ArrayList<WaveType>();
+		list.add(new WaveType(0,"N/A"));
+		return Collections.unmodifiableList(list);
 	}
 
 	@Override
@@ -183,10 +185,10 @@ public class SerialComDummy extends AbstractSerialCom {
 	public void setMeasureRunState(int num) {/* unused */}
 
 	@Override
-	public void setOffset(int channel, int offset) {/* unused */}
+	public void setOffset(int channel, double offset) {/* unused */}
 
 	@Override
-	public void setPhase(int channel, int phase) {/* unused */}
+	public void setPhase(int channel, double phase) {/* unused */}
 
 	@Override
 	public void setPort(SerialPort port) {/* unused */}
@@ -236,7 +238,7 @@ public class SerialComDummy extends AbstractSerialCom {
 
 	@Override
 	public int getArbSize() {
-		return 0;
+		return 1024;
 	}
 
 
@@ -248,7 +250,7 @@ public class SerialComDummy extends AbstractSerialCom {
 
 	@Override
 	public int getArbMax() {
-		return 0;
+		return 1024;
 	}
 
 

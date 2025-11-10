@@ -37,12 +37,9 @@ public class DataGraphComponent extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final String SPLIT_REGEXP = "\\s*[,;]\\s*";
 
-	/** data */
-	private int[] data = new int[0];
-	/** size of data */
-	private int dataSize = 0;
-	/** maximum */
-	private int max = 4096;
+	/** Data model for the graph */
+	private final transient DataModel dataModel = new DataModel();
+
 	/** x scale */
 	private double xScale = 4.0;
 	/** y scale */
@@ -60,10 +57,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param dataSize the data size
 	 */
 	public void initData(int max, int offset, int dataSize) {
-		this.dataSize = dataSize;
-		this.data = new int[dataSize];
-		this.max = max;
-		Arrays.fill(data, 0);
+		dataModel.initialize(max, dataSize);
 	}
 
 	/**
@@ -71,9 +65,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param data the data
 	 */
 	public void setData(int[] data) {
-		for (int i = 0; i < data.length && i < this.data.length; i++) {
-			this.data[i] = data[i];
-		}
+		dataModel.setData(data);
 		repaint();
 	}
 
@@ -83,9 +75,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param value the value
 	 */
 	public void setValue(int index, Double value) {
-		if (index >= 0 && index < data.length) {
-			data[index] = value.intValue();
-		}
+		dataModel.setValue(index, value);
 	}
 
 	/**
@@ -94,9 +84,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param value the value
 	 */
 	public void setValue(int index, Integer value) {
-		if (index >= 0 && index < data.length) {
-			data[index] = value;
-		}
+		dataModel.setValue(index, value);
 	}
 
 	@Override
@@ -104,22 +92,39 @@ public class DataGraphComponent extends JPanel {
 		super.paintComponent(g);
 
 		int ymax = getHeight();
-		xScale = ((double) dataSize) / getWidth();
-		yScale = ((double) max) / ymax;
+		xScale = ((double) dataModel.getSize()) / getWidth();
+		yScale = ((double) dataModel.getMax()) / ymax;
 
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, getWidth(), ymax);
 
 		var g2d = (Graphics2D) g;
+		drawAxes(g2d, ymax);
+		drawData(g2d, ymax);
+	}
 
+	/**
+	 * Draw the horizontal and vertical axes
+	 * @param g2d the graphics context
+	 * @param ymax the maximum y value
+	 */
+	private void drawAxes(Graphics2D g2d, int ymax) {
 		g2d.setPaint(Color.BLUE);
-		int hy = (int) (max / (2.0 * yScale));
-		int vx = (int) (dataSize / (2.0 * xScale));
-		g2d.drawLine(0, hy, (int) ((dataSize - 1) / xScale), hy);
-		g2d.drawLine(vx, 0, vx, (int) ((max - 1) / yScale));
+		int hy = (int) (dataModel.getMax() / (2.0 * yScale));
+		int vx = (int) (dataModel.getSize() / (2.0 * xScale));
+		g2d.drawLine(0, hy, (int) ((dataModel.getSize() - 1) / xScale), hy);
+		g2d.drawLine(vx, 0, vx, (int) ((dataModel.getMax() - 1) / yScale));
+	}
 
+	/**
+	 * Draw the data points
+	 * @param g2d the graphics context
+	 * @param ymax the maximum y value
+	 */
+	private void drawData(Graphics2D g2d, int ymax) {
 		g2d.setPaint(Color.GRAY);
-		for (int x0 = 0, x1 = 0; x1 < dataSize; x1++) {
+		int[] data = dataModel.getData();
+		for (int x0 = 0, x1 = 0; x1 < dataModel.getSize(); x1++) {
 			g2d.drawLine(
 					(int) (x0 / xScale),
 					ymax - ((int) (data[x0] / yScale)),
@@ -135,10 +140,10 @@ public class DataGraphComponent extends JPanel {
 	 * @param pt1 end point
 	 */
 	public void drawDataLine(Point pt0, Point pt1) {
-		int x0 = trim(pt0.x, 0, dataSize - 1, xScale);
-		int y0 = trim(pt0.y, 0, max, yScale);
-		int x1 = trim(pt1.x, 0, dataSize - 1, xScale);
-		int y1 = trim(pt1.y, 0, max, yScale);
+		int x0 = trim(pt0.x, 0, dataModel.getSize() - 1, xScale);
+		int y0 = trim(pt0.y, 0, dataModel.getMax(), yScale);
+		int x1 = trim(pt1.x, 0, dataModel.getSize() - 1, xScale);
+		int y1 = trim(pt1.y, 0, dataModel.getMax(), yScale);
 		drawDataLine(x0, y0, x1, y1);
 	}
 
@@ -150,42 +155,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param y2 y2
 	 */
 	public void drawDataLine(int x1, int y1, int x2, int y2) {
-		int dx = Math.abs(x2 - x1);
-		int dy = Math.abs(y2 - y1);
-		int dx2 = 2 * dx;
-		int dy2 = 2 * dy;
-		int xi = x1 < x2 ? 1 : -1;
-		int yi = y1 < y2 ? 1 : -1;
-		int x = x1;
-		int y = y1;
-		int d = 0;
-		if (dx >= dy) {
-			while (true) {
-				data[x] = y;
-				if (x == x2) {
-					break;
-				}
-				x += xi;
-				d += dy2;
-				if (d > dx) {
-					y += yi;
-					d -= dx2;
-				}
-			}
-		} else {
-			while (true) {
-				data[x] = y;
-				if (y == y2) {
-					break;
-				}
-				y += yi;
-				d += dx2;
-				if (d > dy) {
-					x += xi;
-					d -= dy2;
-				}
-			}
-		}
+		dataModel.drawLine(x1, y1, x2, y2);
 	}
 
 	/**
@@ -202,7 +172,10 @@ public class DataGraphComponent extends JPanel {
 				drawDataLine(pt1, pt0);
 			}
 		} else {
-			data[trim(pt1.x, 0, dataSize - 1, xScale)] = trim(pt1.y, 0, max, yScale);
+			dataModel.setValue(
+				trim(pt1.x, 0, dataModel.getSize() - 1, xScale),
+				trim(pt1.y, 0, dataModel.getMax(), yScale)
+			);
 		}
 		return pt1;
 	}
@@ -212,9 +185,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param func the plotter
 	 */
 	public void plot(IntUnaryOperator func) {
-		for (int x = 0; x < dataSize; x++) {
-			data[x] = func.applyAsInt(x);
-		}
+		dataModel.applyFunction(func);
 		repaint();
 	}
 
@@ -223,25 +194,13 @@ public class DataGraphComponent extends JPanel {
 	 * @param func the plotter
 	 */
 	public void plot(IntBinaryOperator func) {
-		for (int x = 0; x < dataSize; x++) {
-			data[x] = func.applyAsInt(x, data[x]);
-		}
+		dataModel.applyFunction(func);
 		repaint();
 	}
 
 	/** Scale up waveform */
 	public void gain() {
-		int h = max / 2;
-		int m = 0;
-		for (int i = 0; i < dataSize; i++) {
-			m = Math.max(m, Math.abs(data[i] - h));
-		}
-		double k = ((double) m) / ((double) h);
-		if (k > 0.0) {
-			for (int i = 0; i < dataSize; i++) {
-				data[i] = ((int) ((data[i] - h) / k)) + h;
-			}
-		}
+		dataModel.gain();
 		repaint();
 	}
 
@@ -250,9 +209,7 @@ public class DataGraphComponent extends JPanel {
 	 * @param dist the distance to move
 	 */
 	public void move(int dist) {
-		for (int i = 0; i < dataSize; i++) {
-			data[i] = data[i] + dist;
-		}
+		dataModel.move(dist);
 		repaint();
 	}
 
@@ -260,7 +217,7 @@ public class DataGraphComponent extends JPanel {
 	 * reset
 	 */
 	public void reset() {
-		Arrays.fill(data, 0);
+		dataModel.reset();
 	}
 
 	/**
@@ -268,7 +225,7 @@ public class DataGraphComponent extends JPanel {
 	 * @return the data
 	 */
 	public int[] getData() {
-		return data;
+		return dataModel.getData();
 	}
 
 	/**
@@ -288,11 +245,7 @@ public class DataGraphComponent extends JPanel {
 	 * @return data as CSV string
 	 */
 	public String getCSV() {
-		var b = new StringBuilder();
-		for (var i : data) {
-			b.append(i).append('\n');
-		}
-		return b.toString();
+		return dataModel.toCSV();
 	}
 
 	/**
@@ -301,12 +254,7 @@ public class DataGraphComponent extends JPanel {
 	 * @return number of values
 	 */
 	public int parseCSV(String csv) {
-		reset();
-		var a = csv.split(SPLIT_REGEXP);
-		for (var i = 0; i < a.length; i++) {
-			data[i] = Integer.parseInt(a[i]);
-		}
-		return a.length;
+		return dataModel.fromCSV(csv, SPLIT_REGEXP);
 	}
 
 	/**
@@ -321,5 +269,212 @@ public class DataGraphComponent extends JPanel {
 		width = Math.min(width, height / proportion);
 		height = Math.min(width * proportion, height);
 		setPreferredSize(new Dimension(width, height));
+	}
+
+	/**
+	 * Data model for the graph component
+	 */
+	private static class DataModel {
+		/** data */
+		private int[] data = new int[0];
+		/** size of data */
+		private int size = 0;
+		/** maximum */
+		private int max = 4096;
+
+		/**
+		 * Initialize data
+		 * @param max maximum value
+		 * @param size data size
+		 */
+		public void initialize(int max, int size) {
+			this.size = size;
+			this.data = new int[size];
+			this.max = max;
+			reset();
+		}
+
+		/**
+		 * Reset data to zeros
+		 */
+		public void reset() {
+			Arrays.fill(data, 0);
+		}
+
+		/**
+		 * Get data array
+		 * @return the data array
+		 */
+		public int[] getData() {
+			return data;
+		}
+
+		/**
+		 * Get data size
+		 * @return the data size
+		 */
+		public int getSize() {
+			return size;
+		}
+
+		/**
+		 * Get maximum value
+		 * @return the maximum value
+		 */
+		public int getMax() {
+			return max;
+		}
+
+		/**
+		 * Set data from array
+		 * @param newData the new data
+		 */
+		public void setData(int[] newData) {
+			for (int i = 0; i < newData.length && i < this.data.length; i++) {
+				this.data[i] = newData[i];
+			}
+		}
+
+		/**
+		 * Set value at index
+		 * @param index the index
+		 * @param value the value
+		 */
+		public void setValue(int index, Integer value) {
+			if (index >= 0 && index < data.length) {
+				data[index] = value;
+			}
+		}
+
+		/**
+		 * Set value at index
+		 * @param index the index
+		 * @param value the value
+		 */
+		public void setValue(int index, Double value) {
+			if (index >= 0 && index < data.length) {
+				data[index] = value.intValue();
+			}
+		}
+
+		/**
+		 * Draw line between points
+		 * @param x1 start x
+		 * @param y1 start y
+		 * @param x2 end x
+		 * @param y2 end y
+		 */
+		public void drawLine(int x1, int y1, int x2, int y2) {
+			int dx = Math.abs(x2 - x1);
+			int dy = Math.abs(y2 - y1);
+			int dx2 = 2 * dx;
+			int dy2 = 2 * dy;
+			int xi = x1 < x2 ? 1 : -1;
+			int yi = y1 < y2 ? 1 : -1;
+			int x = x1;
+			int y = y1;
+			int d = 0;
+			if (dx >= dy) {
+				while (true) {
+					data[x] = y;
+					if (x == x2) {
+						break;
+					}
+					x += xi;
+					d += dy2;
+					if (d > dx) {
+						y += yi;
+						d -= dx2;
+					}
+				}
+			} else {
+				while (true) {
+					data[x] = y;
+					if (y == y2) {
+						break;
+					}
+					y += yi;
+					d += dx2;
+					if (d > dy) {
+						x += xi;
+						d -= dy2;
+					}
+				}
+			}
+		}
+
+		/**
+		 * Apply function to data
+		 * @param func the function
+		 */
+		public void applyFunction(IntUnaryOperator func) {
+			for (int x = 0; x < size; x++) {
+				data[x] = func.applyAsInt(x);
+			}
+		}
+
+		/**
+		 * Apply binary function to data
+		 * @param func the function
+		 */
+		public void applyFunction(IntBinaryOperator func) {
+			for (int x = 0; x < size; x++) {
+				data[x] = func.applyAsInt(x, data[x]);
+			}
+		}
+
+		/**
+		 * Scale up waveform
+		 */
+		public void gain() {
+			int h = max / 2;
+			int m = 0;
+			for (int i = 0; i < size; i++) {
+				m = Math.max(m, Math.abs(data[i] - h));
+			}
+			double k = ((double) m) / ((double) h);
+			if (k > 0.0) {
+				for (int i = 0; i < size; i++) {
+					data[i] = ((int) ((data[i] - h) / k)) + h;
+				}
+			}
+		}
+
+		/**
+		 * Move data up/down
+		 * @param dist the distance to move
+		 */
+		public void move(int dist) {
+			for (int i = 0; i < size; i++) {
+				data[i] = data[i] + dist;
+			}
+		}
+
+		/**
+		 * Convert data to CSV
+		 * @return CSV string
+		 */
+		public String toCSV() {
+			var b = new StringBuilder();
+			for (var i : data) {
+				b.append(i).append('\n');
+			}
+			return b.toString();
+		}
+
+		/**
+		 * Parse CSV data
+		 * @param csv the CSV string
+		 * @param splitRegexp the split regexp
+		 * @return number of values parsed
+		 */
+		public int fromCSV(String csv, String splitRegexp) {
+			reset();
+			var a = csv.split(splitRegexp);
+			for (var i = 0; i < a.length && i < data.length; i++) {
+				data[i] = Integer.parseInt(a[i]);
+			}
+			return a.length;
+		}
 	}
 }

@@ -195,10 +195,11 @@ public class ConfigPanel extends JPanel implements FuncTab {
 		if (connect) {
 			serialChangeConsumer.accept(cmd);
 			cmd.connect();
-
-			tfModel.setText(getSerial().getModel());
-			tfSerial.setText(getSerial().getProduct());
-			tfFirmware.setText(getSerial().getFirmware());
+			if (cmd.isOnline()) {			
+				tfModel.setText(getSerial().getModel());
+				tfSerial.setText(getSerial().getProduct());
+				tfFirmware.setText(getSerial().getFirmware());
+			}
 		}
 	}
 

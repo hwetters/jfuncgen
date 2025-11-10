@@ -6,6 +6,7 @@ M2REPO="$HOME/.m2/repository"
 PROJ_JAVA_HOME=/opt/jdk-21
 MAVEN_JAVA_HOME=/opt/jdk-21
 export JAVA_HOME
+JF_LOCALE="-Duser.country=US -Duser.language=en"
 
 error()
 {
@@ -34,7 +35,7 @@ if [ -r "$PROJ_JAR" ]; then
   export JDK_JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
   [ -x "$JAVA_HOME/bin/java" ] || error "No JVM in $JAVA_HOME"
   echo "[run]"
-  exec "$JAVA_HOME/bin/java" -Xmx4096m -classpath $PROJ_JAR:$CP $MAINCLASS $*
+  exec "$JAVA_HOME/bin/java" --enable-native-access=ALL-UNNAMED $JF_LOCALE -Xmx4g -classpath $PROJ_JAR:$CP $MAINCLASS $*
 else
   error "Failed to find jar $PROJ_JAR"
 fi

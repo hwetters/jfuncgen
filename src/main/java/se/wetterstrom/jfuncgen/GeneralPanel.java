@@ -36,16 +36,12 @@ public class GeneralPanel extends JPanel implements FuncTab {
 	private final ChannelControlPanel controlPanel1 = new ChannelControlPanel(1);
 	/** channel 2 controls */
 	private final ChannelControlPanel controlPanel2 = new ChannelControlPanel(2);
-	/** trace toggle button */
-	private final JToggleButton btTrace = new JToggleButton("Trace");
-	/** enable output toggle button */
-	private final JToggleButton btEnableOutput = new JToggleButton("Output");
-	/** enable power out toggle button */
-	private final JToggleButton btPowerOut = new JToggleButton("Power Out");
+	/** Control buttons */
+	private final ControlButtons controlButtons = new ControlButtons();
 
 	/** Constructor */
 	public GeneralPanel() {
-		this.setup();
+		initializeUI();
 	}
 
 	/**
@@ -58,6 +54,7 @@ public class GeneralPanel extends JPanel implements FuncTab {
 			this.com = com;
 			controlPanel1.setSerial(com);
 			controlPanel2.setSerial(com);
+			controlButtons.setSerialCom(com);
 		} finally {
 			setEnabled(true);
 		}
@@ -68,39 +65,84 @@ public class GeneralPanel extends JPanel implements FuncTab {
 		super.setEnabled(enable);
 		controlPanel1.setEnabled(enable);
 		controlPanel2.setEnabled(enable);
-		btTrace.setEnabled(enable);
-		btEnableOutput.setEnabled(enable);
-		btPowerOut.setEnabled(enable);
+		controlButtons.setEnabled(enable);
 	}
 
-	private void setup() {
+	private void initializeUI() {
 		setLayout(new GridBagLayout());
 		var gbc = new GridBagConstraints();
+		var channelsPanel = createChannelsPanel();
 
-		var chPanel = new JPanel(new GridLayout(1, 2));
-		chPanel.add(controlPanel1);
-		chPanel.add(controlPanel2);
+		GuiUtils.addToGridBag(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.BOTH, 
+				GridBagConstraints.NORTHWEST, gbc, this, channelsPanel);
+		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.NORTHWEST, gbc, this, controlButtons);
+	}
 
-		var btPanel = new JPanel();
-		btTrace.addActionListener(e -> com.setTrace(btTrace.isSelected()));
-		btPanel.add(btTrace);
-
-		btEnableOutput.addActionListener(e->com.setEnableOutput(btEnableOutput.isSelected()));
-		btPanel.add(btEnableOutput);
-
-		btPowerOut.addActionListener(e->com.setPowerOut(btPowerOut.isSelected()));
-		btPanel.add(btPowerOut);
-
-		GuiUtils.addToGridBag(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST,gbc, this, chPanel);
-		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST,gbc, this, btPanel);
+	private JPanel createChannelsPanel() {
+		var panel = new JPanel(new GridLayout(1, 2));
+		panel.add(controlPanel1);
+		panel.add(controlPanel2);
+		return panel;
 	}
 
 	@Override
 	public void reload() {
 		controlPanel1.reload();
 		controlPanel2.reload();
-		btTrace.setSelected(com.getTrace() != 0);
-		btPowerOut.setSelected(com.getPowerOut());
-		btEnableOutput.setSelected(com.getEnableOutput());
+		controlButtons.reload(com);
+	}
+
+	/**
+	 * Control buttons panel
+	 */
+	private static class ControlButtons extends JPanel {
+		private static final long serialVersionUID = 1L;
+
+		/** trace toggle button */
+		private final JToggleButton btTrace = new JToggleButton("Trace");
+		/** enable output toggle button */
+		private final JToggleButton btEnableOutput = new JToggleButton("Output");
+		/** enable power out toggle button */
+		private final JToggleButton btPowerOut = new JToggleButton("Power Out");
+
+		/** Constructor */
+		public ControlButtons() {
+			initializeUI();
+		}
+
+		private void initializeUI() {
+			add(btTrace);
+			add(btEnableOutput);
+			add(btPowerOut);
+		}
+
+		/**
+		 * Set serial communication
+		 * @param com the serial communication
+		 */
+		public void setSerialCom(AbstractSerialCom com) {
+			btTrace.addActionListener(e -> com.setTrace(btTrace.isSelected()));
+			btEnableOutput.addActionListener(e -> com.setEnableOutput(btEnableOutput.isSelected()));
+			btPowerOut.addActionListener(e -> com.setPowerOut(btPowerOut.isSelected()));
+		}
+
+		@Override
+		public void setEnabled(boolean enable) {
+			super.setEnabled(enable);
+			btTrace.setEnabled(enable);
+			btEnableOutput.setEnabled(enable);
+			btPowerOut.setEnabled(enable);
+		}
+
+		/**
+		 * Reload button states
+		 * @param com the serial communication
+		 */
+		public void reload(AbstractSerialCom com) {
+			btTrace.setSelected(com.getTrace() != 0);
+			btPowerOut.setSelected(com.getPowerOut());
+			btEnableOutput.setSelected(com.getEnableOutput());
+		}
 	}
 }

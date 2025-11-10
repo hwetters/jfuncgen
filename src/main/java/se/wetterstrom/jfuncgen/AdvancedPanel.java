@@ -6,7 +6,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,49 +49,15 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 
 	private static final long serialVersionUID = 1L;
 
-	// Measure
-	/** measure mode combo box */
-	private final JComboBox<MeasureMode> cbMeasureMode = new JComboBox<>(MeasureMode.values());
-	/** gatevalue combo box */
-	private final JComboBox<IdName> cbGateValue = new JComboBox<>();
-	/** Ext/TTL toggle button */
-	private final JToggleButton btExtTTL = new JToggleButton("TTL");
-	/** Run/Measure toggle button */
-	private final JToggleButton btRunMeasure = new JToggleButton("Run");
-	/** reset button */
-	private final JButton btResetCounter = new JButton("Reset");
-
-	// Sweep
-	/** sweep start */
-	private final JTextField tfSweepStart = new JTextField("440.00", 10);
-	/** sweep end */
-	private final JTextField tfSweepEnd = new JTextField("880.00", 10);
-	/** sweep time */
-	private final JFormattedTextField tfSweepTime = new JFormattedTextField(new DecimalFormat("##.##"));
-	/** Linear sweep mode */
-	private final JRadioButton rbSweepModeLin = new JRadioButton("Linear");
-	/** Logarithmic sweep mode */
-	private final JRadioButton rbSweepModeLog = new JRadioButton("Logarithm");
-	/** Run sweep toggle button */
-	private final JToggleButton btRunSweep = new JToggleButton("Run sweep");
-	/** sweep object combobox */
-	private final JComboBox<SweepObject> cbSweepObject = new JComboBox<>(SweepObject.values());
-	/** sweep source combobox */
-	private final JComboBox<SweepSource> cbSweepSource = new JComboBox<>(SweepSource.values());
-	/** sweep direction combobox */
-	private final JComboBox<SweepDirection> cbSweepDirection = new JComboBox<>(SweepDirection.values());
-	// Settings
-	/** load button */
-	private final JButton btLoadSettings = new JButton("Load");
-	/** save button */
-	private final JButton btSaveSettings = new JButton("Save");
-	/** setting number combobox */
-	private final JComboBox<Integer> cbSettingStore = new JComboBox<>(
-			IntStream.range(0, 16).boxed().toArray(Integer[]::new));
-
-	// Phase
-	/** phase number field */
-	private final JFormattedTextField tfPhase = new JFormattedTextField(NumberFormat.getIntegerInstance());
+	// Component groups
+	/** The Measurements widgets */
+	private final MeasurePanel measurePanel = new MeasurePanel();
+	/** Sweep widgets */
+	private final SweepPanel sweepPanel = new SweepPanel();
+	/** Settings widgets */
+	private final SettingsPanel settingsPanel = new SettingsPanel();
+	/** Phase widgets */
+	private final PhasePanel phasePanel = new PhasePanel();
 
 	/** serial command */
 	private transient AbstractSerialCom cmd = null;
@@ -101,122 +66,31 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 
 	/** Constructor */
 	public AdvancedPanel() {
+		initializeUI();
+	}
 
+	private void initializeUI() {
 		setLayout(new GridBagLayout());
 		var gbc = new GridBagConstraints();
 
-		var sweepModeGrp = new ButtonGroup();
-		sweepModeGrp.add(rbSweepModeLin);
-		sweepModeGrp.add(rbSweepModeLog);
-		rbSweepModeLin.setSelected(true);
-
-		btResetCounter.setEnabled(false);
-		btRunMeasure.setEnabled(false);
-		cbGateValue.setEnabled(true);
-
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
-				setupMeasurePanel());
-		GuiUtils.addToGridBag(1, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
-				setupSweepPanel());
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
-				setupSettingsPanel());
-		GuiUtils.addToGridBag(1, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, this,
-				setupPhasePanel());
-
-		// measure
-		cbMeasureMode.addActionListener(e -> {
-			if (!disabled) {
-				var m = cbMeasureMode.getItemAt(cbMeasureMode.getSelectedIndex());
-				cmd.setMeasureMode(m);
-				btResetCounter.setEnabled(m == MeasureMode.COUNTER);
-				btRunMeasure.setEnabled(m == MeasureMode.COUNTER);
-				cbGateValue.setEnabled(m == MeasureMode.FREQUENCY);
-			}
-		});
-
-		Function<Object, String> gateNameMapper = obj -> Optional.ofNullable(obj).filter(IdName.class::isInstance)
-				.map(IdName.class::cast).map(p -> p.value).orElse("");
-		cbGateValue.setRenderer(new MappingListRenderer(gateNameMapper));
-		cbGateValue.addActionListener(e -> {
-			if (!disabled) {
-				cmd.setGateValue(Optional.ofNullable(cbGateValue.getSelectedItem()).filter(Objects::nonNull)
-						.map(IdName.class::cast).map(i -> i.key).orElse(0));
-			}
-		});
-		btExtTTL.addActionListener(e -> {
-			if (!disabled) {
-				cmd.setExtTtl(btExtTTL.isSelected());
-				setTtlExt(btExtTTL.isSelected());
-			}
-		});
-
-		btResetCounter.addActionListener(e -> cmd.setResetCounter(1));
-
-		btRunMeasure.addActionListener(e -> cmd.setMeasureRunState(btRunMeasure.isSelected() ? 1 : 0));
-
-		// sweep
-		tfSweepStart.setColumns(12);
-		tfSweepEnd.setColumns(12);
-		tfSweepTime.setColumns(12);
-
-		tfSweepStart.addActionListener(e -> handleFreqChange(tfSweepStart, cmd::setSweepStart));
-		tfSweepEnd.addActionListener(e -> handleFreqChange(tfSweepEnd, cmd::setSweepEnd));
-		tfSweepTime.setValue(10);
-		tfSweepTime.addPropertyChangeListener("value", e -> Optional.ofNullable(tfSweepTime.getValue())
-				.map(Number.class::cast).map(Number::doubleValue).ifPresent(cmd::setSweepTime));
-		rbSweepModeLin.addActionListener(e -> cmd.setSweepLinLog(0));
-		rbSweepModeLog.addActionListener(e -> cmd.setSweepLinLog(1));
-		btRunSweep.setSelected(false);
-		btRunSweep.addActionListener(e -> cmd.setSweepState(btRunSweep.isSelected()));
-		cbSweepObject.addActionListener(e -> cmd.setSweepMode((SweepObject) cbSweepObject.getSelectedItem()));
-		cbSweepSource.addActionListener(e -> {
-			var source = (SweepSource) cbSweepSource.getSelectedItem();
-			tfSweepTime.setEditable(SweepSource.TIME == source);
-			cmd.setSweepSource(source);
-		});
-		cbSweepDirection.addActionListener(e->{
-			var dir = (SweepDirection) cbSweepDirection.getSelectedItem();
-			cmd.setSweepDirection(dir);
-		});
-
-		// Settings
-		btLoadSettings.addActionListener(e -> cmd.loadSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
-				.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
-		btSaveSettings.addActionListener(e -> cmd.saveSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
-				.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
-		// Phase
-		tfPhase.setValue(0);
-		tfPhase.setColumns(4);
-		tfPhase.addActionListener(e -> Optional.ofNullable(tfPhase.getValue()).map(Number.class::cast)
-				.map(Number::intValue).ifPresent(p -> cmd.setPhase(0, p)));
+		// Add component panels to main layout
+		GuiUtils.addToGridBag(0, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH,
+				GridBagConstraints.NORTHWEST, gbc, this, measurePanel);
+		GuiUtils.addToGridBag(1, 0, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH,
+				GridBagConstraints.NORTHWEST, gbc, this, sweepPanel);
+		GuiUtils.addToGridBag(0, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH,
+				GridBagConstraints.NORTHWEST, gbc, this, settingsPanel);
+		GuiUtils.addToGridBag(1, 1, 1, 1, 0.5, 1.0, GridBagConstraints.BOTH,
+				GridBagConstraints.NORTHWEST, gbc, this, phasePanel);
 	}
 
 	@Override
 	public void setEnabled(boolean enable) {
 		super.setEnabled(enable);
-
-		btResetCounter.setEnabled(enable);
-		btRunMeasure.setEnabled(enable);
-		cbGateValue.setEnabled(enable);
-		btExtTTL.setEnabled(enable);
-		btResetCounter.setEnabled(enable);
-		btRunMeasure.setEnabled(enable);
-
-		tfSweepStart.setEnabled(enable);
-		tfSweepEnd.setEnabled(enable);
-		tfSweepTime.setEnabled(enable);
-		rbSweepModeLin.setEnabled(enable);
-		rbSweepModeLog.setEnabled(enable);
-		btRunSweep.setEnabled(enable);
-		cbSweepObject.setEnabled(enable);
-		cbSweepSource.setEnabled(enable);
-		cbSweepDirection.setEditable(enable);
-
-		btLoadSettings.setEnabled(enable);
-		btSaveSettings.setEnabled(enable);
-		cbSettingStore.setEnabled(enable);
-		cbMeasureMode.setEnabled(enable);
-		tfPhase.setEnabled(enable);
+		measurePanel.setEnabled(enable);
+		sweepPanel.setEnabled(enable);
+		settingsPanel.setEnabled(enable);
+		phasePanel.setEnabled(enable);
 	}
 
 	/**
@@ -225,166 +99,18 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 	 */
 	public void setSerial(AbstractSerialCom cmd) {
 		this.cmd = cmd;
-		cbGateValue.removeAllItems();
-		cmd.getGateValues().forEach(cbGateValue::addItem);
+		measurePanel.setSerial(cmd);
+		sweepPanel.setSerial(cmd);
+		settingsPanel.setSerial(cmd);
+		phasePanel.setSerial(cmd);
 	}
 
-	private JPanel setupSweepPanel() {
-		var panel = new JPanel(new GridBagLayout());
-		var gbc = new GridBagConstraints();
-
-		tfSweepStart.setHorizontalAlignment(SwingConstants.RIGHT);
-		tfSweepEnd.setHorizontalAlignment(SwingConstants.RIGHT);
-		tfSweepTime.setHorizontalAlignment(SwingConstants.RIGHT);
-
-		tfSweepStart.setToolTipText("Start sweep frequency.");
-		tfSweepEnd.setToolTipText("End sweep frequency.");
-		tfSweepTime.setToolTipText("The time in seconds from start to end sweep frequency.");
-
-		var modePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		modePanel.add(rbSweepModeLin);
-		modePanel.add(rbSweepModeLog);
-
-		GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Start"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				tfSweepStart);
-		GuiUtils.addToGridBag(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("End"));
-		GuiUtils.addToGridBag(0, 3, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				tfSweepEnd);
-		GuiUtils.addToGridBag(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Time"));
-		GuiUtils.addToGridBag(0, 5, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				tfSweepTime);
-		GuiUtils.addToGridBag(1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Direction"));
-		GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSweepDirection);
-		GuiUtils.addToGridBag(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 8, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Mode"));
-		GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, modePanel);
-		GuiUtils.addToGridBag(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 10, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Object"));
-		GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSweepObject);
-		GuiUtils.addToGridBag(1, 11, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 12, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Source"));
-		GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSweepSource);
-		GuiUtils.addToGridBag(1, 13, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.addToGridBag(0, 14, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JPanel());
-		GuiUtils.addToGridBag(0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.WEST, gbc, panel,
-				btRunSweep);
-		GuiUtils.addToGridBag(1, 15, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
-				panel, new JPanel());
-
-		GuiUtils.fillGridBag(0, 16, 2, 1, gbc, panel);
-
-		panel.setBorder(BorderFactory.createTitledBorder("Sweep Function"));
-
-		tfSweepTime.setPreferredSize(tfSweepStart.getPreferredSize());
-
-		return panel;
-	}
-
-	private JPanel setupMeasurePanel() {
-		var panel = new JPanel(new GridBagLayout());
-		var gbc = new GridBagConstraints();
-		panel.setBorder(BorderFactory.createTitledBorder("Measure Function"));
-
-		var btPanel = new JPanel(new GridLayout(1, 2));
-		btPanel.add(btResetCounter);
-		btPanel.add(btRunMeasure);
-
-		GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Mode"));
-		GuiUtils.addToGridBag(0, 1, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbMeasureMode);
-
-		GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Gate Time"));
-		GuiUtils.addToGridBag(0, 3, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbGateValue);
-
-		GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Input"));
-		GuiUtils.addToGridBag(0, 5, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				btExtTTL);
-
-		GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JPanel());
-		GuiUtils.addToGridBag(0, 7, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				btPanel);
-
-		GuiUtils.fillGridBag(0, 8, 2, 1, gbc, panel);
-
-		return panel;
-	}
-
-	private JPanel setupSettingsPanel() {
-		var panel = new JPanel(new GridBagLayout());
-		var gbc = new GridBagConstraints();
-		panel.setBorder(BorderFactory.createTitledBorder("Settings"));
-
-		btLoadSettings.setToolTipText("Load settings.");
-		btSaveSettings.setToolTipText("Save settings.");
-
-		var btPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		btPanel.add(btLoadSettings);
-		btPanel.add(btSaveSettings);
-
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Memory"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				cbSettingStore);
-
-		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				btPanel);
-
-		GuiUtils.fillGridBag(0, 3, 1, 1, gbc, panel);
-		return panel;
-	}
-
-	private JPanel setupPhasePanel() {
-		var panel = new JPanel(new GridBagLayout());
-		var gbc = new GridBagConstraints();
-		panel.setBorder(BorderFactory.createTitledBorder("Phase"));
-
-		tfPhase.setHorizontalAlignment(SwingConstants.RIGHT);
-
-		GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				new JLabel("Phase"));
-		GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				tfPhase);
-		GuiUtils.fillGridBag(0, 2, 1, 1, gbc, panel);
-
-		return panel;
-	}
-
-	private void handleFreqChange(JTextField field, DoubleConsumer setter) {
+	/**
+	 * Helper method to handle frequency changes
+	 * @param field the text field
+	 * @param setter the setter method
+	 */
+	private static void handleFreqChange(JTextField field, DoubleConsumer setter) {
 		try {
 			double f = Utils.parseFreq(field.getText());
 			if (f >= 0 && f <= SerialCom5200.MAX_FREQ) {
@@ -395,13 +121,6 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 			}
 		} catch (ParseException ex) {
 			field.setForeground(Color.RED);
-		}
-	}
-
-	private void setTtlExt(boolean value) {
-		btExtTTL.setText(value ? "EXT" : "TTL");
-		if (btExtTTL.isSelected() != value) {
-			btExtTTL.setSelected(value);
 		}
 	}
 
@@ -433,6 +152,135 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		@Override
 		public String toString() {
 			return name;
+		}
+	}
+
+	/**
+	 * Measure panel component
+	 */
+	private class MeasurePanel extends JPanel {
+		private static final long serialVersionUID = 1L;
+
+		/** measure mode combo box */
+		private final JComboBox<MeasureMode> cbMeasureMode = new JComboBox<>(MeasureMode.values());
+		/** gatevalue combo box */
+		private final JComboBox<IdName> cbGateValue = new JComboBox<>();
+		/** Ext/TTL toggle button */
+		private final JToggleButton btExtTTL = new JToggleButton("TTL");
+		/** Run/Measure toggle button */
+		private final JToggleButton btRunMeasure = new JToggleButton("Run");
+		/** reset button */
+		private final JButton btResetCounter = new JButton("Reset");
+
+		public MeasurePanel() {
+			setupPanel();
+			setupEventHandlers();
+		}
+
+		private void setupPanel() {
+			setBorder(BorderFactory.createTitledBorder("Measure Function"));
+			setLayout(new GridBagLayout());
+			var gbc = new GridBagConstraints();
+
+			btResetCounter.setEnabled(false);
+			btRunMeasure.setEnabled(false);
+			cbGateValue.setEnabled(true);
+
+			var btPanel = new JPanel(new GridLayout(1, 2));
+			btPanel.add(btResetCounter);
+			btPanel.add(btRunMeasure);
+
+			GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Mode"));
+			GuiUtils.addToGridBag(0, 1, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbMeasureMode);
+
+			GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Gate Time"));
+			GuiUtils.addToGridBag(0, 3, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbGateValue);
+
+			GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Input"));
+			GuiUtils.addToGridBag(0, 5, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					btExtTTL);
+
+			GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JPanel());
+			GuiUtils.addToGridBag(0, 7, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					btPanel);
+
+			GuiUtils.fillGridBag(0, 8, 2, 1, gbc, this);
+		}
+
+		private void setupEventHandlers() {
+			Function<Object, String> gateNameMapper = obj -> Optional.ofNullable(obj).filter(IdName.class::isInstance)
+					.map(IdName.class::cast).map(p -> p.value).orElse("");
+			cbGateValue.setRenderer(new MappingListRenderer(gateNameMapper));
+		}
+
+		public void setSerial(AbstractSerialCom cmd) {
+			cbGateValue.removeAllItems();
+			cmd.getGateValues().forEach(cbGateValue::addItem);
+
+			cbMeasureMode.addActionListener(e -> {
+				if (!disabled) {
+					var m = cbMeasureMode.getItemAt(cbMeasureMode.getSelectedIndex());
+					cmd.setMeasureMode(m);
+					btResetCounter.setEnabled(m == MeasureMode.COUNTER);
+					btRunMeasure.setEnabled(m == MeasureMode.COUNTER);
+					cbGateValue.setEnabled(m == MeasureMode.FREQUENCY);
+				}
+			});
+
+			cbGateValue.addActionListener(e -> {
+				if (!disabled) {
+					cmd.setGateValue(Optional.ofNullable(cbGateValue.getSelectedItem()).filter(Objects::nonNull)
+							.map(IdName.class::cast).map(i -> i.key).orElse(0));
+				}
+			});
+
+			btExtTTL.addActionListener(e -> {
+				if (!disabled) {
+					cmd.setExtTtl(btExtTTL.isSelected());
+					setTtlExt(btExtTTL.isSelected());
+				}
+			});
+
+			btResetCounter.addActionListener(e -> cmd.setResetCounter(1));
+			btRunMeasure.addActionListener(e -> cmd.setMeasureRunState(btRunMeasure.isSelected() ? 1 : 0));
+		}
+
+		@Override
+		public void setEnabled(boolean enable) {
+			super.setEnabled(enable);
+			btResetCounter.setEnabled(enable);
+			btRunMeasure.setEnabled(enable);
+			cbGateValue.setEnabled(enable);
+			btExtTTL.setEnabled(enable);
+		}
+
+		public void reload(AbstractSerialCom cmd) {
+			var measureMode = cmd.getMeasureMode();
+			cbMeasureMode.setEnabled(false);
+			cbMeasureMode.setSelectedItem(measureMode);
+			cbMeasureMode.setEnabled(true);
+
+			if (MeasureMode.FREQUENCY.equals(measureMode)) {
+				int v = cmd.getGateValue();
+				cbGateValue.setEnabled(false);
+				cmd.getGateValues().stream().filter(i -> i.key == v).findAny().ifPresent(cbGateValue::setSelectedItem);
+				cbGateValue.setEnabled(true);
+			}
+
+			setTtlExt(cmd.getExtTtl() == 0);
+		}
+
+		private void setTtlExt(boolean value) {
+			btExtTTL.setText(value ? "EXT" : "TTL");
+			if (btExtTTL.isSelected() != value) {
+				btExtTTL.setSelected(value);
+			}
 		}
 	}
 
@@ -496,25 +344,170 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 		}
 	}
 
-	@Override
-	public void reload() {
-		try {
-			disabled = true;
+	/**
+	 * Sweep panel component
+	 */
+	private class SweepPanel extends JPanel {
+		private static final long serialVersionUID = 1L;
+
+		/** sweep start */
+		private final JTextField tfSweepStart = new JTextField("440.00", 10);
+		/** sweep end */
+		private final JTextField tfSweepEnd = new JTextField("880.00", 10);
+		/** sweep time */
+		private final JFormattedTextField tfSweepTime = new JFormattedTextField(new DecimalFormat("##.##"));
+		/** Linear sweep mode */
+		private final JRadioButton rbSweepModeLin = new JRadioButton("Linear");
+		/** Logarithmic sweep mode */
+		private final JRadioButton rbSweepModeLog = new JRadioButton("Logarithm");
+		/** Run sweep toggle button */
+		private final JToggleButton btRunSweep = new JToggleButton("Run sweep");
+		/** sweep object combobox */
+		private final JComboBox<SweepObject> cbSweepObject = new JComboBox<>(SweepObject.values());
+		/** sweep source combobox */
+		private final JComboBox<SweepSource> cbSweepSource = new JComboBox<>(SweepSource.values());
+		/** sweep direction combobox */
+		private final JComboBox<SweepDirection> cbSweepDirection = new JComboBox<>(SweepDirection.values());
+
+		public SweepPanel() {
+			setupPanel();
+		}
+
+		private void setupPanel() {
+			setBorder(BorderFactory.createTitledBorder("Sweep Function"));
+			setLayout(new GridBagLayout());
+			var gbc = new GridBagConstraints();
+
+			// Initialize components
+			tfSweepStart.setColumns(12);
+			tfSweepEnd.setColumns(12);
+			tfSweepTime.setColumns(12);
+			tfSweepTime.setValue(10);
+
+			tfSweepStart.setHorizontalAlignment(SwingConstants.RIGHT);
+			tfSweepEnd.setHorizontalAlignment(SwingConstants.RIGHT);
+			tfSweepTime.setHorizontalAlignment(SwingConstants.RIGHT);
+
+			tfSweepStart.setToolTipText("Start sweep frequency.");
+			tfSweepEnd.setToolTipText("End sweep frequency.");
+			tfSweepTime.setToolTipText("The time in seconds from start to end sweep frequency.");
+
+			var sweepModeGrp = new ButtonGroup();
+			sweepModeGrp.add(rbSweepModeLin);
+			sweepModeGrp.add(rbSweepModeLog);
+			rbSweepModeLin.setSelected(true);
+
+			var modePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			modePanel.add(rbSweepModeLin);
+			modePanel.add(rbSweepModeLog);
+
+			// Add components to panel
+			GuiUtils.addToGridBag(0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Start"));
+			GuiUtils.addToGridBag(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					tfSweepStart);
+			GuiUtils.addToGridBag(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 2, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("End"));
+			GuiUtils.addToGridBag(0, 3, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					tfSweepEnd);
+			GuiUtils.addToGridBag(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Time"));
+			GuiUtils.addToGridBag(0, 5, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					tfSweepTime);
+			GuiUtils.addToGridBag(1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 6, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Direction"));
+			GuiUtils.addToGridBag(0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbSweepDirection);
+			GuiUtils.addToGridBag(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 8, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Mode"));
+			GuiUtils.addToGridBag(0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, modePanel);
+			GuiUtils.addToGridBag(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 10, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Object"));
+			GuiUtils.addToGridBag(0, 11, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbSweepObject);
+			GuiUtils.addToGridBag(1, 11, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 12, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Source"));
+			GuiUtils.addToGridBag(0, 13, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbSweepSource);
+			GuiUtils.addToGridBag(1, 13, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.addToGridBag(0, 14, 2, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JPanel());
+			GuiUtils.addToGridBag(0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.WEST, gbc, this,
+					btRunSweep);
+			GuiUtils.addToGridBag(1, 15, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
+					this, new JPanel());
+
+			GuiUtils.fillGridBag(0, 16, 2, 1, gbc, this);
+
+			tfSweepTime.setPreferredSize(tfSweepStart.getPreferredSize());
+		}
+
+		public void setSerial(AbstractSerialCom cmd) {
+			tfSweepStart.addActionListener(e -> handleFreqChange(tfSweepStart, cmd::setSweepStart));
+			tfSweepEnd.addActionListener(e -> handleFreqChange(tfSweepEnd, cmd::setSweepEnd));
+
+			tfSweepTime.addPropertyChangeListener("value", e -> Optional.ofNullable(tfSweepTime.getValue())
+					.map(Number.class::cast).map(Number::doubleValue).ifPresent(cmd::setSweepTime));
+
+			rbSweepModeLin.addActionListener(e -> cmd.setSweepLinLog(0));
+			rbSweepModeLog.addActionListener(e -> cmd.setSweepLinLog(1));
+
+			btRunSweep.setSelected(false);
+			btRunSweep.addActionListener(e -> cmd.setSweepState(btRunSweep.isSelected()));
+
+			cbSweepObject.addActionListener(e -> cmd.setSweepMode((SweepObject) cbSweepObject.getSelectedItem()));
+
+			cbSweepSource.addActionListener(e -> {
+				var source = (SweepSource) cbSweepSource.getSelectedItem();
+				tfSweepTime.setEditable(SweepSource.TIME == source);
+				cmd.setSweepSource(source);
+			});
+
+			cbSweepDirection.addActionListener(e -> {
+				var dir = (SweepDirection) cbSweepDirection.getSelectedItem();
+				cmd.setSweepDirection(dir);
+			});
+		}
+
+		@Override
+		public void setEnabled(boolean enable) {
+			super.setEnabled(enable);
+			tfSweepStart.setEnabled(enable);
+			tfSweepEnd.setEnabled(enable);
+			tfSweepTime.setEnabled(enable);
+			rbSweepModeLin.setEnabled(enable);
+			rbSweepModeLog.setEnabled(enable);
+			btRunSweep.setEnabled(enable);
+			cbSweepObject.setEnabled(enable);
+			cbSweepSource.setEnabled(enable);
+			cbSweepDirection.setEnabled(enable);
+		}
+
+		public void reload(AbstractSerialCom cmd) {
 			tfSweepStart.setText("" + cmd.getSweepStart());
 			tfSweepEnd.setText("" + cmd.getSweepEnd());
 			tfSweepTime.setText("" + cmd.getSweepTime());
-			var measureMode = cmd.getMeasureMode();
-			cbMeasureMode.setEnabled(false);
-			cbMeasureMode.setSelectedItem(measureMode);
-			cbMeasureMode.setEnabled(true);
-			if (MeasureMode.FREQUENCY.equals(measureMode)) {
-				int v = cmd.getGateValue();
-				cbGateValue.setEnabled(false);
-				cmd.getGateValues().stream().filter(i -> i.key == v).findAny().ifPresent(cbGateValue::setSelectedItem);
-				cbGateValue.setEnabled(true);
-			}
-			tfPhase.setText("" + cmd.getPhase(0));
-			setTtlExt(cmd.getExtTtl() == 0);
 
 			int linlog = cmd.getSweepLinLog();
 			if (linlog == 0) {
@@ -522,8 +515,135 @@ public class AdvancedPanel extends JPanel implements FuncTab {
 			} else {
 				rbSweepModeLog.setSelected(true);
 			}
+		}
+	}
+
+	@Override
+	public void reload() {
+		try {
+			disabled = true;
+			if (cmd != null) {
+				measurePanel.reload(cmd);
+				sweepPanel.reload(cmd);
+				settingsPanel.reload(cmd);
+				phasePanel.reload(cmd);
+			}
 		} finally {
 			disabled = false;
+		}
+	}
+
+	/**
+	 * Settings panel component
+	 */
+	private class SettingsPanel extends JPanel {
+		private static final long serialVersionUID = 1L;
+
+		/** load button */
+		private final JButton btLoadSettings = new JButton("Load");
+		/** save button */
+		private final JButton btSaveSettings = new JButton("Save");
+		/** setting number combobox */
+		private final JComboBox<Integer> cbSettingStore = new JComboBox<>(
+				IntStream.range(0, 16).boxed().toArray(Integer[]::new));
+
+		public SettingsPanel() {
+			setupPanel();
+		}
+
+		private void setupPanel() {
+			setBorder(BorderFactory.createTitledBorder("Settings"));
+			setLayout(new GridBagLayout());
+			var gbc = new GridBagConstraints();
+
+			btLoadSettings.setToolTipText("Load settings.");
+			btSaveSettings.setToolTipText("Save settings.");
+
+			var btPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+			btPanel.add(btLoadSettings);
+			btPanel.add(btSaveSettings);
+
+			GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					new JLabel("Memory"));
+			GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					cbSettingStore);
+
+			GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					btPanel);
+
+			GuiUtils.fillGridBag(0, 3, 1, 1, gbc, this);
+		}
+
+		public void setSerial(AbstractSerialCom cmd) {
+			btLoadSettings.addActionListener(e -> cmd.loadSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
+					.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
+			btSaveSettings.addActionListener(e -> cmd.saveSettings(Optional.ofNullable(cbSettingStore.getSelectedItem())
+					.filter(Objects::nonNull).map(Integer.class::cast).orElse(0)));
+		}
+
+		@Override
+		public void setEnabled(boolean enable) {
+			super.setEnabled(enable);
+			btLoadSettings.setEnabled(enable);
+			btSaveSettings.setEnabled(enable);
+			cbSettingStore.setEnabled(enable);
+		}
+
+		public void reload(AbstractSerialCom cmd) {
+			// Nothing to reload for settings panel
+		}
+	}
+
+	/**
+	 * Phase panel component
+	 */
+	private class PhasePanel extends JPanel {
+		private static final long serialVersionUID = 1L;
+
+		/** phase number field */
+		private final JFormattedTextField tfPhase1 = new JFormattedTextField(new DecimalFormat("###.###"));
+		private final JFormattedTextField tfPhase2 = new JFormattedTextField(new DecimalFormat("###.###"));
+
+		public PhasePanel() {
+			setupPanel();
+		}
+
+		private void setupPanel() {
+			setBorder(BorderFactory.createTitledBorder("Phase"));
+			setLayout(new GridBagLayout());
+			var gbc = new GridBagConstraints();
+
+			tfPhase1.setValue(0.0);
+			tfPhase1.setColumns(7);
+			tfPhase1.setHorizontalAlignment(SwingConstants.RIGHT);
+			tfPhase2.setValue(0.0);
+			tfPhase2.setColumns(7);
+			tfPhase2.setHorizontalAlignment(SwingConstants.RIGHT);
+			
+			GuiUtils.addToGridBag(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					tfPhase1);
+			GuiUtils.addToGridBag(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, this,
+					tfPhase2);
+			GuiUtils.fillGridBag(0, 1, 1, 1, gbc, this);
+		}
+
+		public void setSerial(AbstractSerialCom cmd) {
+			tfPhase1.addActionListener(e -> Optional.ofNullable(tfPhase1.getValue()).map(Number.class::cast)
+					.map(Number::doubleValue).ifPresent(p -> cmd.setPhase(0, p)));
+			tfPhase2.addActionListener(e -> Optional.ofNullable(tfPhase2.getValue()).map(Number.class::cast)
+					.map(Number::doubleValue).ifPresent(p -> cmd.setPhase(1, p)));
+		}
+
+		@Override
+		public void setEnabled(boolean enable) {
+			super.setEnabled(enable);
+			tfPhase1.setEnabled(enable);
+			tfPhase2.setEnabled(enable);
+		}
+
+		public void reload(AbstractSerialCom cmd) {
+			tfPhase1.setText("" + cmd.getPhase(0));
+			tfPhase2.setText("" + cmd.getPhase(1));
 		}
 	}
 }

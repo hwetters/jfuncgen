@@ -84,13 +84,13 @@ public class SerialCom5200Test {
 	@Test
 	public void testGetAmplitude() {
 		var com = new SerialCom5200();
-		getDoubleTest("amplitude", ":r1a\n", ":r1a1234\n", 12.34, com, a -> com.getAmplitude(a));
+		getDoubleTest("amplitude", ":r1a\n", ":r1a1234\n", 12.34, com, com::getAmplitude);
 	}
 
 	@Test
 	public void testGetAttenuation() {
 		var com = new SerialCom5200();
-		getIntTest("attenuation", ":r1y\n", ":r1y1\n", 1, com, a -> com.getAttenuation(a));
+		getIntTest("attenuation", ":r1y\n", ":r1y1\n", 1, com, com::getAttenuation);
 	}
 
 	@Test
@@ -102,13 +102,13 @@ public class SerialCom5200Test {
 	@Test
 	public void testGetDutyCycle() {
 		var com = new SerialCom5200();
-		getDoubleTest("dutycycle", ":r1d\n", ":r1d1234\n", 123.4, com, a -> com.getDutyCycle(a));
+		getDoubleTest("dutycycle", ":r1d\n", ":r1d1234\n", 123.4, com, com::getDutyCycle);
 	}
 
 	@Test
 	public void testGetEnableChannel() {
 		var com = new SerialCom5200();
-		getBooleanTest("enable", ":r1b\n", ":r1b1\n", true, com, a -> com.getEnableChannel(a));
+		getBooleanTest("enable", ":r1b\n", ":r1b1\n", true, com, com::getEnableChannel);
 	}
 
 	@Test
@@ -126,7 +126,7 @@ public class SerialCom5200Test {
 	@Test
 	public void testGetFrequency() {
 		var com = new SerialCom5200();
-		getDoubleTest("frequency", ":r1f\n", ":r1f12345678\n", 123456.78, com, a -> com.getFrequency(a));
+		getDoubleTest("frequency", ":r1f\n", ":r1f12345678\n", 123456.78, com, com::getFrequency);
 	}
 
 	@Test
@@ -157,13 +157,13 @@ public class SerialCom5200Test {
 	@Test
 	public void testGetOffset() {
 		var com = new SerialCom5200();
-		getIntTest("offset", ":r1o\n", ":r1o123\n", 3, com, a -> com.getOffset(a));
+		getDoubleTest("offset", ":r1o\n", ":r1o123\n", 3, com, com::getOffset);
 	}
 
 	@Test
 	public void testGetPhase() {
 		var com = new SerialCom5200();
-		getIntTest("phase", ":r1p\n", ":r1p201\n", 201, com, a -> com.getPhase(a));
+		getDoubleTest("phase", ":r1p\n", ":r1p201\n", 201, com, com::getPhase);
 	}
 
 
@@ -218,7 +218,7 @@ public class SerialCom5200Test {
 	@Test
 	public void testGetWaveForm() {
 		var com = new SerialCom5200();
-		getIntTest("waveform", ":r1w\n", ":r1w123\n", 123, com, a -> com.getWaveForm(a));
+		getIntTest("waveform", ":r1w\n", ":r1w123\n", 123, com, com::getWaveForm);
 	}
 
 	@Test

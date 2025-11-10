@@ -245,13 +245,13 @@ public class SerialCom5200 extends AbstractSerialCom{
 	}
 
 	@Override
-	public int getOffset(int channel) {
+	public double getOffset(int channel) {
 		// :r[12]o - return offset (120=0% 0=-120% 240=120%)
-		return Integer.parseInt( Optional.ofNullable(requestReply(String.format(":r%do\n", channel))).map(a->a.replaceFirst("^:r\\do\\s*", "")).map(String::trim).orElse("120")) - 120;
+		return Integer.parseInt( Optional.ofNullable(requestReply(String.format(":r%do\n", channel))).map(a->a.replaceFirst("^:r\\do\\s*", "")).map(String::trim).orElse("120")) - 120.0;
 	}
 
 	@Override
-	public int getPhase(int channel) {
+	public double getPhase(int channel) {
 		// :r[12]p - return phase. 0 - 360 degrees.
 		return Optional.ofNullable(requestReply(String.format(":r%dp\n", channel))).map(s->s.replaceFirst("^:r\\dp\\s*", "")).map(String::trim).map(Integer::parseInt).orElse(0);
 	}
@@ -462,15 +462,15 @@ public class SerialCom5200 extends AbstractSerialCom{
 	}
 
 	@Override
-	public void setOffset(int channel, int offset) {
+	public void setOffset(int channel, double offset) {
 		// :s[12]o[0-9]+ set offset
 		formatSerial(":s%do%03d\n", channel, Math.clamp(offset + 120L, 0L, 240L));
 	}
 
 	@Override
-	public void setPhase(int channel, int phase) {
+	public void setPhase(int channel, double phase) {
 		// :s[12]p[0-9]+ - set phase
-		formatSerial(":s%dp%d\n", channel, Math.abs(phase % 360));
+		formatSerial(":s%dp%d\n", channel, Math.abs(((int)phase) % 360));
 	}
 
 	@Override

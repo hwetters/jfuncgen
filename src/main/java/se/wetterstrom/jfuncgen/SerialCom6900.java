@@ -1,5 +1,6 @@
 package se.wetterstrom.jfuncgen;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,8 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	/** Max frequency */
 	public static final int MAX_FREQ = 100000000;
+	/** Frequency double formatter */
+	private static final DecimalFormat FREQ_FORMATTER = new DecimalFormat("0000000000.######");
 
 	// Serial port settings
 	private static final String DEFAULT_PORT_NAME = "ttyUSB0";
@@ -95,7 +98,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public double getDutyCycle(int channel) {
-		return requestReplyDouble((channel&1) == 0 ? "RMD\n" : "RFD\n", 50.0);
+		return requestReplyDouble((channel&1) == 0 ? "RFD\n" : "RMD\n", 50.0)/1000.0;
 	}
 
 	@Override
@@ -161,14 +164,13 @@ public class SerialCom6900 extends AbstractSerialCom{
 	}
 
 	@Override
-	public int getOffset(int channel) {
-		return requestReplyInt((channel&1) == 0 ? "RFO\n" : "RMO\n", 0);
+	public double getOffset(int channel) {
+		return requestReplyDouble((channel&1) == 0 ? "RFO\n" : "RMO\n", 0.0) / 1000.0;
 	}
 
 	@Override
-	public int getPhase(int channel) {
-		// FIXME
-		return 0;
+	public double getPhase(int channel) {
+		return requestReplyDouble((channel&1) == 0 ? "RFP\n" : "RMP\n", 0.0) / 1000.0;
 	}
 
 	@Override
@@ -329,7 +331,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 
 	@Override
 	public void setDutyCycle(int channel, double duty) {
-		formatSerial((channel&1) == 0 ? "WFD%f\n" : "WMD%f\n", duty);
+		formatSerial((channel&1) == 0 ? "WFD%2.3f\n" : "WMD%2.3f\n", duty);
 	}
 
 	@Override
@@ -350,7 +352,7 @@ public class SerialCom6900 extends AbstractSerialCom{
 	@Override
 	public void setFrequency(int channel, double frequency) {
 		if (frequency >= 0 && frequency <= MAX_FREQ) {
-			formatSerial((channel&1) == 0 ? "WFF%08d\n" : "WMF%08d\n", (long) frequency);
+			formatSerial((channel&1) == 0 ? "WFF%s\n" : "WMF%s\n", FREQ_FORMATTER.format(frequency));
 		}
 	}
 
@@ -375,13 +377,13 @@ public class SerialCom6900 extends AbstractSerialCom{
 	}
 
 	@Override
-	public void setOffset(int channel, int offset) {
-		formatSerial((channel&1) == 0 ? "WFO%08d\n" : "WMO%08d\n", (long) offset);
+	public void setOffset(int channel, double offset) {
+		formatSerial((channel&1) == 0 ? "WFO%2.3f\n" : "WMO%2.3f\n", offset);
 	}
 
 	@Override
-	public void setPhase(int channel, int phase) {
-		formatSerial((channel&1) == 0 ? "WFP%d\n" : "WMP%d\n", phase);
+	public void setPhase(int channel, double phase) {
+		formatSerial((channel&1) == 0 ? "WFP%3.3f\n" : "WMP%3.3f\n", phase);
 	}
 
 

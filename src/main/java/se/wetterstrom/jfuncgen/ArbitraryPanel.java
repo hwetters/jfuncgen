@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,6 +78,32 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	/** the serial command */
 	private transient AbstractSerialCom serialCom;
 
+	/** Wave function types */
+	private enum WaveFunction {
+		SIN("sin", "Sinus"),
+		COS("cos", "Cosinus"),
+		TAN("tan", "Tangent"),
+		SQUARE("Square", "Square wave"),
+		RANDOM("rnd", "Random data"),
+		SAW_RISING("SawR", "Sawtooth (raising)"),
+		SAW_FALLING("SawF", "Sawtooth (falling)"),
+		TRIANGLE("triangle", "Triangle wave"),
+		FLAT("Flat", "Flat line"),
+		ABS("Abs", "Absolute values"),
+		INVERT("Invert", "Invert data"),
+		GAIN("Gain", "Gain data"),
+		INCREASE("+", "Increase (up)"),
+		DECREASE("-", "Decrease (down)");
+
+		final String label;
+		final String tooltip;
+
+		private WaveFunction(String label, String tooltip) {
+			this.label = label;
+			this.tooltip = tooltip;
+		}
+	}
+
 	/** Constructor */
 	public ArbitraryPanel() {
 		setLayout(new BorderLayout());
@@ -124,83 +148,29 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	private JPanel createButtonPanel() {
 		var panel = new JPanel();
 
+		// Add combo box for arbitrary data set selection
 		panel.add(cbArbNum);
 
-		btRead.addActionListener(e -> readData(cbArbNum.getSelectedIndex()));
+		// Configure and add data operation buttons
+		configureDataButtons();
 		panel.add(btRead);
-		btWrite.addActionListener(e -> writeData(cbArbNum.getSelectedIndex()));
 		panel.add(btWrite);
-
-		btExport.addActionListener(e -> exportFile());
 		panel.add(btExport);
-
-		btImport.addActionListener(e -> importFile());
 		panel.add(btImport);
-
-		btEditData.addActionListener(e -> openEditData());
 		panel.add(btEditData);
-
 		return panel;
 	}
 
+	private void configureDataButtons() {
+		btRead.addActionListener(e -> readData(cbArbNum.getSelectedIndex()));
+		btWrite.addActionListener(e -> writeData(cbArbNum.getSelectedIndex()));
+		btExport.addActionListener(e -> exportFile());
+		btImport.addActionListener(e -> importFile());
+		btEditData.addActionListener(e -> openEditData());
+	}
+
 	private JPanel getFuncButtonPanel() {
-		// sin
-		IntUnaryOperator sin = x -> (int) ((Math.sin((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
-				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("sin", e -> dgc.plot(sin), "Sinus"));
-		// cos
-		IntUnaryOperator cos = x -> (int) ((Math.cos((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
-				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("cos", e -> dgc.plot(cos), "Cosinus"));
-		// tan
-		IntUnaryOperator tan = x -> (int) ((Math.tan((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0)
-				* serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("tan", e -> dgc.plot(tan), "Tangent"));
-		// square
-		IntUnaryOperator square = x -> Integer.signum(x - serialCom.getArbSize() / 2) * (serialCom.getArbMax() / 2)
-				+ (serialCom.getArbMax() / 2);
-		funcButtons.add(createFuncbutton("Square", e -> dgc.plot(square), "Square wave"));
-		// rand
-		IntUnaryOperator rnd = x -> RANDOM.nextInt(serialCom.getArbMax());
-		funcButtons.add(createFuncbutton("rnd", e -> dgc.plot(rnd), "Random data"));
-		// saw raising
-		ActionListener sawR = e -> {
-			dgc.drawDataLine(0, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
-			dgc.repaint();
-		};
-		funcButtons.add(createFuncbutton("SawR", sawR, "Sawtooth (raising)"));
-		// saw falling
-		ActionListener sawF = e -> {
-			dgc.drawDataLine(0, serialCom.getArbMax() - 1, serialCom.getArbSize() - 1, 0);
-			dgc.repaint();
-		};
-		funcButtons.add(createFuncbutton("SawF", sawF, "Sawtooth (falling)"));
-		// triangle
-		ActionListener triangle = e -> {
-			dgc.drawDataLine(0, serialCom.getArbMax() - 1, (serialCom.getArbSize() / 2) - 1, 0);
-			dgc.drawDataLine(serialCom.getArbSize() / 2, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
-			dgc.repaint();
-		};
-		funcButtons.add(createFuncbutton("triangle", triangle, "Triangle wave"));
-		// flatline
-		ActionListener flat = e -> {
-			var y = (serialCom.getArbMax() - serialCom.getArbMin()) / 2;
-			dgc.drawDataLine(0, y, serialCom.getArbSize() - 1, y);
-			dgc.repaint();
-		};
-		funcButtons.add(createFuncbutton("Flat", flat, "Flat line"));
-		// abs
-		IntBinaryOperator abs = (x, y) -> Math.abs(y - serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2;
-		funcButtons.add(createFuncbutton("Abs", e -> dgc.plot(abs), "Absolute values"));
-		// invert
-		IntBinaryOperator inv = (x, y) -> ((serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2) - y;
-		funcButtons.add(createFuncbutton("Invert", e -> dgc.plot(inv), "Invert data"));
-
-		//
-		funcButtons.add(createFuncbutton("Gain", e -> dgc.gain(), "Gain data"));
-
-		var incBut = createFuncbutton("+", e -> dgc.move(10), "Increase (up)");
-		var decBut = createFuncbutton("-", e -> dgc.move(-10), "Decrease (down)");
+		createWaveFunctionButtons();
 
 		MouseWheelListener ml = e -> {
 			int notches = e.getWheelRotation();
@@ -208,24 +178,50 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 			int u = Math.abs(e.getUnitsToScroll());
 			dgc.move(notches * sa * u);
 		};
-		incBut.addMouseWheelListener(ml);
-		decBut.addMouseWheelListener(ml);
-		funcButtons.add(incBut);
-		funcButtons.add(decBut);
 
+		// Add mouse wheel listeners to increase/decrease buttons
+		JButton incButton = funcButtons.stream()
+				.filter(b -> b.getText().equals(WaveFunction.INCREASE.label))
+				.findFirst().orElse(null);
+		JButton decButton = funcButtons.stream()
+				.filter(b -> b.getText().equals(WaveFunction.DECREASE.label))
+				.findFirst().orElse(null);
+
+		if (incButton != null) incButton.addMouseWheelListener(ml);
+		if (decButton != null) decButton.addMouseWheelListener(ml);
+
+		// Initialize X range fields
+		initializeRangeFields();
+
+		// Create button panel with all function buttons
+		var bPanel = new JPanel(new FlowLayout());
+		funcButtons.forEach(bPanel::add);
+
+		// Create evaluate button and function input
+		var bEval = new JButton("Evaluate");
+		bEval.addActionListener(e -> evaluateFunction(tfFunction.getText()));
+		setupFunctionTooltip();
+
+		// Create the panel with GridBagLayout
+		var panel = new JPanel(new GridBagLayout());
+		var gbc = new GridBagConstraints();
+
+		// Add components to panel
+		addComponentsToPanel(panel, gbc, bPanel, bEval);
+
+		return panel;
+	}
+
+	private void initializeRangeFields() {
 		tfXmin.setValue(-Math.PI);
 		tfXmax.setValue(Math.PI);
 		tfXmin.setHorizontalAlignment(SwingConstants.RIGHT);
 		tfXmax.setHorizontalAlignment(SwingConstants.RIGHT);
 		tfXmin.setColumns(5);
 		tfXmax.setColumns(5);
+	}
 
-		var bPanel = new JPanel(new FlowLayout());
-		funcButtons.stream().forEach(bPanel::add);
-
-		var bEval = new JButton("Evaluate");
-		bEval.addActionListener(e -> evaluateFunction(tfFunction.getText()));
-
+	private void setupFunctionTooltip() {
 		var index = new AtomicInteger(-1);
 		tfFunction.setToolTipText("<html><dl><dt><strong>Constants:</strong></dt><dd> e, &pi;, pi, &phi; </dd>"
 				+ "<dt><strong>Functions:</strong></dt><dd><i>"
@@ -234,18 +230,20 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 						.map(s -> (index.getAndIncrement() % 6 >= 5 ? "<br>" : "") + s)
 						.collect(Collectors.joining(", "))
 				+ "</i></dd></dl>");
+	}
 
-		var gbc = new GridBagConstraints();
-
-		var panel = new JPanel(new GridBagLayout());
+	private void addComponentsToPanel(JPanel panel, GridBagConstraints gbc, JPanel buttonPanel, JButton evalButton) {
+		// Add button panel
 		GuiUtils.addToGridBag(0, 0, 5, 1, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, panel,
-				bPanel);
+				buttonPanel);
 
+		// Add function input and evaluate button
 		GuiUtils.addToGridBag(0, 1, 5, 1, 1.0, 0.0, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST, gbc, panel,
 				tfFunction);
 		GuiUtils.addToGridBag(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
-				bEval);
+				evalButton);
 
+		// Add X range controls
 		GuiUtils.addToGridBag(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
 				new JLabel(" X "));
 		GuiUtils.addToGridBag(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST, gbc, panel,
@@ -256,40 +254,57 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 				tfXmax);
 		GuiUtils.addToGridBag(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST, gbc,
 				panel, new JPanel());
-
-		return panel;
 	}
 
 	private void evaluateFunction(String f) {
-		if (!Utils.isEmpty(f)) {
-			try {
-				if (!serialCom.isOnline()) {
-					serialCom.getStatusConsumer().accept(StatusBar.Status.OFFLINE, "Offline!");
-					return;
-				}
-				double xmin = Optional.ofNullable(tfXmin.getValue()).map(Number.class::cast).map(Number::doubleValue)
-						.filter(d -> !Double.isNaN(d)).orElse(0.0);
-				double xmax = Optional.ofNullable(tfXmax.getValue()).map(Number.class::cast).map(Number::doubleValue)
-						.filter(d -> !Double.isNaN(d)).orElse(0.0);
-
-				if (xmax - xmin <= 0.0) {
-					serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "Invalid X range!");
-					return;
-				}
-
-				int size = serialCom.getArbSize();
-				if (size < 1) {
-					serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "No data size!");
-					return;
-				}
-				var expr = new ExpressionBuilder(f).variables("x").build();
-				dgc.setData(fx(expr, xmin, xmax, size));
-			} catch (UnknownFunctionOrVariableException ex) {
-				serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, ex.getMessage());
-			}
-		} else {
+		if (Utils.isEmpty(f)) {
 			serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "No function expression specified!");
+			return;
 		}
+
+		try {
+			double xmin = getDoubleValue(tfXmin, 0.0);
+			double xmax = getDoubleValue(tfXmax, 0.0);
+
+			if (!validateRange(xmin, xmax)) {
+				return;
+			}
+
+			int size = serialCom.getArbSize();
+			if (size < 1) {
+				serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "No data size!");
+				return;
+			}
+
+			var expr = new ExpressionBuilder(f).variables("x").build();
+			dgc.setData(fx(expr, xmin, xmax, size));
+		} catch (UnknownFunctionOrVariableException ex) {
+			serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, ex.getMessage());
+		}
+	}
+
+	private boolean validateSerialConnection() {
+		if (!serialCom.isOnline()) {
+			serialCom.getStatusConsumer().accept(StatusBar.Status.OFFLINE, "Offline!");
+			return false;
+		}
+		return true;
+	}
+
+	private boolean validateRange(double min, double max) {
+		if (max - min <= 0.0) {
+			serialCom.getStatusConsumer().accept(StatusBar.Status.ERROR, "Invalid X range!");
+			return false;
+		}
+		return true;
+	}
+
+	private double getDoubleValue(JFormattedTextField field, double defaultValue) {
+		return Optional.ofNullable(field.getValue())
+			.map(Number.class::cast)
+			.map(Number::doubleValue)
+			.filter(d -> !Double.isNaN(d))
+			.orElse(defaultValue);
 	}
 
 	private int[] fx(Expression expr, double xmin, double xmax, int size) {
@@ -333,6 +348,97 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 		return b;
 	}
 
+	private void createWaveFunctionButtons() {
+		// Trigonometric functions
+		funcButtons.add(createFuncbutton(
+			WaveFunction.SIN.label,
+			e -> dgc.plot(x -> (int) ((Math.sin((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0) * serialCom.getArbMax() / 2)),
+			WaveFunction.SIN.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.COS.label,
+			e -> dgc.plot(x -> (int) ((Math.cos((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0) * serialCom.getArbMax() / 2)),
+			WaveFunction.COS.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.TAN.label,
+			e -> dgc.plot(x -> (int) ((Math.tan((((double) x) / serialCom.getArbSize()) * 2 * Math.PI) + 1.0) * serialCom.getArbMax() / 2)),
+			WaveFunction.TAN.tooltip));
+
+		// Other wave types
+		funcButtons.add(createFuncbutton(
+			WaveFunction.SQUARE.label,
+			e -> dgc.plot(x -> Integer.signum(x - serialCom.getArbSize() / 2) * (serialCom.getArbMax() / 2) + (serialCom.getArbMax() / 2)),
+			WaveFunction.SQUARE.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.RANDOM.label,
+			e -> dgc.plot(x -> RANDOM.nextInt(serialCom.getArbMax())),
+			WaveFunction.RANDOM.tooltip));
+
+		// Line-based waveforms
+		funcButtons.add(createFuncbutton(
+			WaveFunction.SAW_RISING.label,
+			e -> {
+				dgc.drawDataLine(0, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
+				dgc.repaint();
+			},
+			WaveFunction.SAW_RISING.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.SAW_FALLING.label,
+			e -> {
+				dgc.drawDataLine(0, serialCom.getArbMax() - 1, serialCom.getArbSize() - 1, 0);
+				dgc.repaint();
+			},
+			WaveFunction.SAW_FALLING.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.TRIANGLE.label,
+			e -> {
+				dgc.drawDataLine(0, serialCom.getArbMax() - 1, (serialCom.getArbSize() / 2) - 1, 0);
+				dgc.drawDataLine(serialCom.getArbSize() / 2, 0, serialCom.getArbSize() - 1, serialCom.getArbMax() - 1);
+				dgc.repaint();
+			},
+			WaveFunction.TRIANGLE.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.FLAT.label,
+			e -> {
+				var y = (serialCom.getArbMax() - serialCom.getArbMin()) / 2;
+				dgc.drawDataLine(0, y, serialCom.getArbSize() - 1, y);
+				dgc.repaint();
+			},
+			WaveFunction.FLAT.tooltip));
+
+		// Data manipulation functions
+		funcButtons.add(createFuncbutton(
+			WaveFunction.ABS.label,
+			e -> dgc.plot((x, y) -> Math.abs(y - serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2),
+			WaveFunction.ABS.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.INVERT.label,
+			e -> dgc.plot((x, y) -> ((serialCom.getArbMax() / 2) + serialCom.getArbMax() / 2) - y),
+			WaveFunction.INVERT.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.GAIN.label,
+			e -> dgc.gain(),
+			WaveFunction.GAIN.tooltip));
+
+		// Movement buttons
+		funcButtons.add(createFuncbutton(
+			WaveFunction.INCREASE.label,
+			e -> dgc.move(10),
+			WaveFunction.INCREASE.tooltip));
+
+		funcButtons.add(createFuncbutton(
+			WaveFunction.DECREASE.label,
+			e -> dgc.move(-10),
+			WaveFunction.DECREASE.tooltip));
+	}
+
 	private void openEditData() {
 		var panel = new ArbDataPanel();
 		panel.addHierarchyListener(e -> GuiUtils.hierarchyListenerResizer(SwingUtilities.getWindowAncestor(panel)));
@@ -350,35 +456,41 @@ public class ArbitraryPanel extends JPanel implements FuncTab {
 	}
 
 	private void readData(int num) {
-		var pm = new ProgressMonitor(this, "Reading data", "", 0, serialCom.getArbSize());
-		pm.setProgress(0);
-		pm.setMillisToDecideToPopup(100);
-		var worker = new Thread() {
-			@Override
-			public void run() {
-				var data = serialCom.getArbData(num, pm);
-				if (!pm.isCanceled() && data != null) {
-					dgc.setData(data);
-				}
-				pm.close();
+		if (!validateSerialConnection()) return;
+
+		executeWithProgress("Reading data", pm -> {
+			var data = serialCom.getArbData(num, pm);
+			if (!pm.isCanceled() && data != null) {
+				dgc.setData(data);
 			}
-		};
-		worker.start();
+		});
 	}
 
 	private void writeData(int num) {
-		var pm = new ProgressMonitor(this, "Writing data", "", 0, serialCom.getArbSize());
+		if (!validateSerialConnection()) return;
+		executeWithProgress("Writing data", pm -> {
+			int[] data = dgc.getData();
+			serialCom.setArbData(num, data, pm);
+		});
+	}
+
+	private void executeWithProgress(String title, ProgressAction action) {
+		var pm = new ProgressMonitor(this, title, "", 0, serialCom.getArbSize());
 		pm.setProgress(0);
 		pm.setMillisToDecideToPopup(100);
-		var worker = new Thread() {
-			@Override
-			public void run() {
-				int[] data = dgc.getData();
-				serialCom.setArbData(num, data, pm);
+
+		new Thread(() -> {
+			try {
+				action.execute(pm);
+			} finally {
 				pm.close();
 			}
-		};
-		worker.start();
+		}).start();
+	}
+
+	@FunctionalInterface
+	private interface ProgressAction {
+		void execute(ProgressMonitor monitor);
 	}
 
 	private void importFile() {
