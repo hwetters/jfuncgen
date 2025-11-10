@@ -4,6 +4,9 @@ jFuncGen is a Java GUI for the MHS-5200 and FY6900 function generators.
 It should work with all operating systems with a Java 21 runtime (or newer) and is supported by [jSerialComm](https://fazecast.github.io/jSerialComm/).
 It has been tested and known to work with Linux. See [jSerialComm](https://fazecast.github.io/jSerialComm/) for details on how to grant the application access to the hardware.
 
+Unfortunately, my old  MHS-52000 function generator gave up and this means I am no longer able to test if new releases works with it.
+The last release which I have actually tested myself is v0.2.2. I will still try to keep it working, but no guarantees (as if there ever was any ;-).
+
 ## System requirements
 
 Java 21 runtime or newer. Download [OpenJDK](http://adoptopenjdk.net/) or [Oracle JDK](http://java.oracle.com).
